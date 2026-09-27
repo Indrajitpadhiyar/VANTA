@@ -142,3 +142,259 @@
   box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.12);
   z-index: 10;
 }
+
+/* ========================================================
+   MASTERCLASS ANIMATION SYSTEM: VANTA PRELOADER
+   Crafted with cinematic easing, 3D perspective & optics
+   ======================================================== */
+
+@keyframes preloaderSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes preloaderSpinRev {
+  0% { transform: rotate(360deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes preloaderPulse {
+  0%, 100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 30px rgba(255, 90, 0, 0.5)) drop-shadow(0 0 60px rgba(255, 60, 0, 0.25));
+  }
+  50% {
+    transform: scale(1.045);
+    filter: drop-shadow(0 0 55px rgba(255, 115, 0, 0.85)) drop-shadow(0 0 90px rgba(255, 60, 0, 0.45));
+  }
+}
+
+@keyframes preloaderSheen {
+  0% {
+    transform: translateX(-200%) translateY(-50%) rotate(-35deg);
+  }
+  100% {
+    transform: translateX(250%) translateY(-50%) rotate(-35deg);
+  }
+}
+
+@keyframes preloaderShockwave {
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+    border-width: 4px;
+  }
+  50% {
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(3.8);
+    opacity: 0;
+    border-width: 1px;
+  }
+}
+
+@keyframes preloaderEmberFloat {
+  0% {
+    transform: translateY(0px) translateX(0px) scale(0.6);
+    opacity: 0;
+  }
+  25% {
+    opacity: 0.9;
+    transform: translateY(-40px) translateX(6px) scale(1);
+  }
+  75% {
+    opacity: 0.8;
+    transform: translateY(-110px) translateX(-8px) scale(0.9);
+  }
+  100% {
+    transform: translateY(-170px) translateX(4px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+@keyframes preloaderEqualizer {
+  0%, 100% {
+    height: 6px;
+    opacity: 0.4;
+  }
+  50% {
+    height: 26px;
+    opacity: 1;
+  }
+}
+
+@keyframes preloaderGlowBloom {
+  0%, 100% {
+    opacity: 0.35;
+    transform: scale(0.92);
+  }
+  50% {
+    opacity: 0.75;
+    transform: scale(1.12);
+  }
+}
+
+@keyframes preloaderBeacon {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 107, 0, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 16px rgba(255, 107, 0, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(255, 107, 0, 0);
+  }
+}
+
+.animate-preloader-spin {
+  animation: preloaderSpin 18s linear infinite;
+}
+
+.animate-preloader-spin-fast {
+  animation: preloaderSpin 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-preloader-spin-rev {
+  animation: preloaderSpinRev 24s linear infinite;
+}
+
+.animate-preloader-pulse {
+  animation: preloaderPulse 3.2s ease-in-out infinite;
+}
+
+.animate-preloader-sheen {
+  animation: preloaderSheen 2.6s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+.animate-preloader-bloom {
+  animation: preloaderGlowBloom 4s ease-in-out infinite;
+}
+
+.animate-preloader-beacon {
+  animation: preloaderBeacon 2s cubic-bezier(0.24, 0, 0.38, 1) infinite;
+}
+
+/* ========================================================
+   ARCHITECTURAL VECTOR DRAWING ANIMATIONS (WHITE THEME)
+   ======================================================== */
+
+@keyframes drawingPenPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 0 12px #ff4500, 0 0 24px #ff8c00;
+  }
+  50% {
+    transform: scale(1.35);
+    box-shadow: 0 0 20px #ff2200, 0 0 35px #ffaa00;
+  }
+}
+
+@keyframes draftingCrosshair {
+  0% { transform: rotate(0deg) scale(0.9); opacity: 0.3; }
+  50% { transform: rotate(180deg) scale(1.1); opacity: 0.8; }
+  100% { transform: rotate(360deg) scale(0.9); opacity: 0.3; }
+}
+
+@keyframes inkWashBloom {
+  0% {
+    opacity: 0;
+    transform: scale(0.94);
+    filter: blur(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes rulerLineSweep {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(200%);
+    opacity: 0;
+  }
+}
+
+.animate-drawing-pen {
+  animation: drawingPenPulse 1.4s ease-in-out infinite;
+}
+
+.animate-drafting-crosshair {
+  animation: draftingCrosshair 12s linear infinite;
+}
+
+.animate-ink-wash {
+  animation: inkWashBloom 0.9s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-ruler-sweep {
+  animation: rulerLineSweep 3.2s ease-in-out infinite;
+}
+
+/* ========================================================
+   TEXTILE & CLOTH DRAPE ANIMATIONS (FASHION BRAND REVEAL)
+   ======================================================== */
+
+@keyframes fabricHemWave {
+  0%, 100% {
+    transform: translateY(0px) scaleY(1);
+  }
+  50% {
+    transform: translateY(-5px) scaleY(1.03);
+  }
+}
+
+@keyframes silkSheenGloss {
+  0% {
+    transform: translateX(-180%) rotate(-25deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.8;
+  }
+  80% {
+    opacity: 0.8;
+  }
+  100% {
+    transform: translateX(220%) rotate(-25deg);
+    opacity: 0;
+  }
+}
+
+@keyframes threadFloatMote {
+  0% {
+    transform: translateY(0) translateX(0) scale(0.8);
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.85;
+    transform: translateY(-25px) translateX(6px) scale(1);
+  }
+  80% {
+    opacity: 0.7;
+    transform: translateY(-65px) translateX(-5px) scale(0.9);
+  }
+  100% {
+    transform: translateY(-100px) translateX(4px) scale(0.3);
+    opacity: 0;
+  }
+}
+
+.animate-fabric-wave {
+  animation: fabricHemWave 2s ease-in-out infinite;
+}
+
+.animate-silk-sheen {
+  animation: silkSheenGloss 2.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}

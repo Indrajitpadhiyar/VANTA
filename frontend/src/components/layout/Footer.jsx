@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
-import { ArrowRight, Check } from 'lucide-react';
+import { ArrowRight, Check, Sparkles } from 'lucide-react';
 import { vantaLogo } from '../../assets';
+import { useUI } from '../../context';
 
 export default function Footer() {
+  const { replayPreloader } = useUI();
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
@@ -138,6 +140,14 @@ export default function Footer() {
         {/* Bottom Credits */}
         <div className="pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-neutral-500 gap-4">
           <p>© 2026 VANTA Inc. All rights reserved.</p>
+          <button 
+            onClick={replayPreloader}
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/5 hover:bg-orange-500/15 border border-white/10 hover:border-orange-500/40 text-neutral-300 hover:text-orange-400 transition-all cursor-pointer text-[11px] font-mono tracking-wider"
+            title="Experience the VANTA 3D Logo Preloader"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-orange-400 animate-pulse" />
+            <span>Replay Intro Animation</span>
+          </button>
           <div className="flex gap-6">
             <a href="#" className="hover:text-neutral-400">Privacy Policy</a>
             <a href="#" className="hover:text-neutral-400">Terms of Service</a>

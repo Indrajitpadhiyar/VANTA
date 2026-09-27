@@ -12,17 +12,23 @@ import {
 } from 'lucide-react';
 import { vantaLogo } from '../../assets';
 import { PRODUCTS } from '../../data/products';
-import { useCart, useUI } from '../../context';
+import { useCart, useUI, useAuth } from '../../context';
+import { UserProfileModal } from '../feedback';
 
 export default function DynamicIslandNav() {
   const { totalCount, openCart, addToCart } = useCart();
+  const { user, isAuthenticated } = useAuth();
   const { 
     openSearch: openGlobalSearch, 
     goHome, 
     viewProduct, 
     draggingProduct, 
-    setDraggingProduct 
+    setDraggingProduct,
+    openAuth,
+    goToProfilePage 
   } = useUI();
+
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const [isHovered, setIsHovered] = useState(false);
   const [activeItem, setActiveItem] = useState('Home');
@@ -376,27 +382,38 @@ export default function DynamicIslandNav() {
               </div>
             </div>
 
-            {/* 3. RIGHT NAV ITEM: Global Search Modal Trigger */}
+            {/* 3. RIGHT NAV ITEM: Account / Sign In Trigger */}
             <div 
               className={`flex items-center transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] overflow-hidden shrink-0
                 ${isSearchActive 
                   ? 'max-w-0 opacity-0 scale-75 pointer-events-none -ml-1' 
-                  : 'max-w-[120px] opacity-100 scale-100 ml-1 sm:ml-1.5'
+                  : 'max-w-[130px] opacity-100 scale-100 ml-1 sm:ml-1.5'
                 }
               `}
             >
               <button
                 id="island-item-account"
-                onClick={() => openGlobalSearch()}
+                onClick={() => goToProfilePage()}
                 className={`relative flex items-center rounded-full text-white/80 hover:text-white transition-all duration-300
                   ${isHovered ? 'px-3 py-1.5' : 'p-2'}
-                  hover:bg-white/10
+                  hover:bg-white/10 cursor-pointer
                 `}
-                title="Account / Search"
+                title={isAuthenticated ? `Account: ${user?.name || 'Member'}` : 'Member Profile & Orders'}
               >
-                <User className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+                {isAuthenticated && user?.avatar?.url ? (
+                  <div className="relative shrink-0">
+                    <img
+                      src={user.avatar.url}
+                      alt={user.name}
+                      className="w-4 h-4 sm:w-[18px] sm:h-[18px] rounded-full object-cover ring-1 ring-orange-500"
+                    />
+                    <span className="absolute -bottom-0.5 -right-0.5 w-1.5 h-1.5 bg-emerald-400 rounded-full" />
+                  </div>
+                ) : (
+                  <User className="w-4 h-4 sm:w-[18px] sm:h-[18px]" />
+                )}
                 <span className={`overflow-hidden transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] text-xs tracking-wide ${isHovered ? 'max-w-[100px] opacity-100 ml-2 whitespace-nowrap' : 'max-w-0 opacity-0 ml-0'}`}>
-                  Account
+                  {isAuthenticated ? (user?.name ? user.name.split(' ')[0] : 'Profile') : 'Sign In'}
                 </span>
               </button>
             </div>
@@ -472,6 +489,12 @@ export default function DynamicIslandNav() {
           )}
         </div>
       )}
+
+      {/* Authenticated Member Profile Modal */}
+      <UserProfileModal 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+      />
     </div>
   );
 }

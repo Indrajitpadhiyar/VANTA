@@ -1,6 +1,6 @@
 import React from 'react';
-import { X, Trash2, ArrowRight, ShoppingBag, ShieldCheck } from 'lucide-react';
-import { useCart } from '../../context';
+import { X, Trash2, ArrowRight, ShoppingBag, ShieldCheck, UserCheck } from 'lucide-react';
+import { useCart, useUI, useAuth } from '../../context';
 
 export default function CartDrawer({
   isOpen: propIsOpen,
@@ -10,6 +10,8 @@ export default function CartDrawer({
   onRemoveItem: propOnRemoveItem
 }) {
   const cartContext = useCart();
+  const { openAuth } = useUI();
+  const { isAuthenticated, user } = useAuth();
 
   const isOpen = propIsOpen !== undefined ? propIsOpen : cartContext.isCartOpen;
   const onClose = propOnClose || cartContext.closeCart;
@@ -151,8 +153,18 @@ export default function CartDrawer({
                 </div>
               </div>
 
-              <button className="w-full py-4 bg-neutral-950 hover:bg-orange-600 text-white rounded-2xl font-bold text-sm tracking-wide transition-all shadow-lg hover:shadow-orange-500/25 flex items-center justify-center gap-2 group font-cute">
-                <span>Proceed to Checkout</span>
+              <button 
+                onClick={() => {
+                  if (!isAuthenticated) {
+                    onClose();
+                    openAuth('login');
+                  } else {
+                    alert(`Order initiated for ${user.name}! Proceeding to gateway...`);
+                  }
+                }}
+                className="w-full py-4 bg-neutral-950 hover:bg-orange-600 text-white rounded-2xl font-bold text-sm tracking-wide transition-all shadow-lg hover:shadow-orange-500/25 flex items-center justify-center gap-2 group font-cute cursor-pointer"
+              >
+                <span>{isAuthenticated ? 'Proceed to Checkout' : 'Sign In to Checkout'}</span>
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
               </button>
 

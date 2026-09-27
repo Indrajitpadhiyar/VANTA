@@ -1,24 +1,28 @@
 import React from 'react';
-import { CartProvider, UIProvider, useUI } from './context';
+import { CartProvider, UIProvider, AuthProvider, useUI } from './context';
 import { 
   DynamicIslandNav, 
   TopBrandHeader, 
   Footer, 
   CartDrawer, 
-  SearchModal 
+  SearchModal,
+  AuthModal,
+  Preloader 
 } from './components';
 import { 
   HeroSection, 
   PhilosophyBanner, 
   FeaturedDrops, 
-  ProductDetailPage 
+  ProductDetailPage,
+  AuthPage,
+  ProfileDetailsPage 
 } from './features';
 
 function MainContent() {
-  const { selectedProduct, goHome } = useUI();
+  const { selectedProduct, goHome, showPreloader, finishPreloader, activeView } = useUI();
 
   const scrollToShop = () => {
-    if (selectedProduct) {
+    if (selectedProduct || activeView !== 'home') {
       goHome();
       setTimeout(() => {
         const el = document.getElementById('shop');
@@ -32,13 +36,24 @@ function MainContent() {
 
   return (
     <div className="min-h-screen bg-white text-neutral-900 selection:bg-orange-500 selection:text-white flex flex-col font-['Outfit',sans-serif] relative">
+      {/* 0. Master Animated Preloader */}
+      {showPreloader && <Preloader onComplete={finishPreloader} />}
+
       {/* 1. Global Interactive Navigation */}
-      <DynamicIslandNav />
-      <TopBrandHeader />
+      {activeView === 'home' && (
+        <>
+          <DynamicIslandNav />
+          <TopBrandHeader />
+        </>
+      )}
 
       {/* 2. Main Viewport Router */}
       <main className="flex-1">
-        {selectedProduct ? (
+        {activeView === 'auth' ? (
+          <AuthPage />
+        ) : activeView === 'profile' ? (
+          <ProfileDetailsPage />
+        ) : selectedProduct ? (
           <ProductDetailPage product={selectedProduct} />
         ) : (
           <>
@@ -50,21 +65,24 @@ function MainContent() {
       </main>
 
       {/* 3. Global Footer */}
-      <Footer />
+      {activeView === 'home' && <Footer />}
 
       {/* 4. Global Modals and Drawers */}
       <SearchModal />
       <CartDrawer />
+      <AuthModal />
     </div>
   );
 }
 
 export default function App() {
   return (
-    <CartProvider>
-      <UIProvider>
-        <MainContent />
-      </UIProvider>
-    </CartProvider>
+    <AuthProvider>
+      <CartProvider>
+        <UIProvider>
+          <MainContent />
+        </UIProvider>
+      </CartProvider>
+    </AuthProvider>
   );
 }
