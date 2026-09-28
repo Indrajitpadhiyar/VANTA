@@ -108,4 +108,23 @@ export const ProductController = {
       ApiResponse.created(uploaded, 'Image uploaded successfully to Cloudinary.')
     );
   }),
+
+  /**
+   * Upload multiple images to Cloudinary (Admin)
+   */
+  uploadMultipleImages: asyncHandler(async (req, res) => {
+    if (!req.files || req.files.length === 0) {
+      throw ApiError.badRequest('Please upload at least one image file.');
+    }
+
+    const uploadPromises = req.files.map((file) =>
+      UploadService.uploadImageBuffer(file.buffer, 'vanta_store/products')
+    );
+
+    const uploaded = await Promise.all(uploadPromises);
+
+    res.status(HttpStatusCodes.CREATED).json(
+      ApiResponse.created(uploaded, 'Images uploaded successfully to Cloudinary.')
+    );
+  }),
 };

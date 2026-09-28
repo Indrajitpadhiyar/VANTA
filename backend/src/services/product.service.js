@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import { Product } from '../models/Product.model.js';
 import { ApiError } from '../utils/apiError.js';
 import { QueryBuilder } from '../utils/queryBuilder.js';
+import { UploadService } from './upload.service.js';
+import { logger } from '../utils/logger.js';
 
 /**
  * Product Catalog Business Logic Service
@@ -74,11 +76,58 @@ export const ProductService = {
   },
 
   /**
+   * Helper to normalize and upload base64 images to Cloudinary
+   */
+  processBase64Images: async (data) => {
+    const clone = { ...data };
+
+    // Process primary image
+    if (clone.image && typeof clone.image === 'string' && clone.image.startsWith('data:image/')) {
+      try {
+        const uploaded = await UploadService.uploadBase64(clone.image);
+        clone.image = uploaded.url;
+      } catch (err) {
+        logger.warn('Failed to upload primary base64 image to Cloudinary:', err.message);
+      }
+    }
+
+    // Process secondary image
+    if (clone.secondaryImage && typeof clone.secondaryImage === 'string' && clone.secondaryImage.startsWith('data:image/')) {
+      try {
+        const uploaded = await UploadService.uploadBase64(clone.secondaryImage);
+        clone.secondaryImage = uploaded.url;
+      } catch (err) {
+        logger.warn('Failed to upload secondary base64 image to Cloudinary:', err.message);
+      }
+    }
+
+    // Process gallery images
+    if (Array.isArray(clone.gallery)) {
+      clone.gallery = await Promise.all(
+        clone.gallery.map(async (item) => {
+          if (typeof item === 'string' && item.startsWith('data:image/')) {
+            try {
+              const res = await UploadService.uploadBase64(item);
+              return res.url;
+            } catch {
+              return item;
+            }
+          }
+          return item;
+        })
+      );
+    }
+
+    return clone;
+  },
+
+  /**
    * Create a new product (Admin)
    * @param {Object} productData
    */
   createProduct: async (productData) => {
-    return await Product.create(productData);
+    const processedData = await ProductService.processBase64Images(productData);
+    return await Product.create(processedData);
   },
 
   /**
@@ -91,7 +140,8 @@ export const ProductService = {
       throw ApiError.badRequest('Invalid product ID format.');
     }
 
-    const updatedProduct = await Product.findByIdAndUpdate(id, updateData, {
+    const processedData = await ProductService.processBase64Images(updateData);
+    const updatedProduct = await Product.findByIdAndUpdate(id, processedData, {
       new: true,
       runValidators: true,
     });

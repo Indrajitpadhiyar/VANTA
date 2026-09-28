@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { authApi } from '../services';
 
 const AuthContext = createContext(null);
-
-const API_BASE_URL = 'http://localhost:4000/api/v1';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
@@ -39,6 +38,32 @@ export function AuthProvider({ children }) {
     }
   }, [user]);
 
+  // Validate token and synchronize latest profile on startup
+  useEffect(() => {
+    if (!token) return;
+
+    let isMounted = true;
+    authApi.getMe()
+      .then((res) => {
+        if (isMounted && res?.data) {
+          setUser(res.data);
+        }
+      })
+      .catch((err) => {
+        // If token is expired or invalid (401), clean up
+        if (err.status === 401) {
+          if (isMounted) {
+            setUser(null);
+            setToken(null);
+          }
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [token]);
+
   /**
    * Login with email and password
    */
@@ -46,21 +71,14 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setAuthError(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Failed to sign in. Please verify your credentials.');
+      const res = await authApi.login({ email, password });
+      if (!res.success) {
+        throw new Error(res.message || 'Failed to sign in. Please verify your credentials.');
       }
 
-      setUser(data.data.user);
-      setToken(data.data.token);
-      return { success: true, data: data.data };
+      setUser(res.data.user);
+      setToken(res.data.token);
+      return { success: true, data: res.data };
     } catch (err) {
       setAuthError(err.message);
       return { success: false, error: err.message };
@@ -76,21 +94,14 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setAuthError(null);
     try {
-      const response = await fetch(`${API_BASE_URL}/auth/register`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, password }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Registration failed. Please try again.');
+      const res = await authApi.register({ name, email, password });
+      if (!res.success) {
+        throw new Error(res.message || 'Registration failed. Please try again.');
       }
 
-      setUser(data.data.user);
-      setToken(data.data.token);
-      return { success: true, data: data.data };
+      setUser(res.data.user);
+      setToken(res.data.token);
+      return { success: true, data: res.data };
     } catch (err) {
       setAuthError(err.message);
       return { success: false, error: err.message };
@@ -106,7 +117,6 @@ export function AuthProvider({ children }) {
     setLoading(true);
     setAuthError(null);
     try {
-      // If mock/interactive without external popup:
       const payload = {
         email: googlePayload.email || 'alex.google@vanta.com',
         name: googlePayload.name || 'Alex Vanta User',
@@ -114,21 +124,36 @@ export function AuthProvider({ children }) {
         googleId: googlePayload.googleId || `g_${Date.now()}`,
       };
 
-      const response = await fetch(`${API_BASE_URL}/auth/google`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok || !data.success) {
-        throw new Error(data.message || 'Google authentication failed.');
+      const res = await authApi.googleLogin(payload);
+      if (!res.success) {
+        throw new Error(res.message || 'Google authentication failed.');
       }
 
-      setUser(data.data.user);
-      setToken(data.data.token);
-      return { success: true, data: data.data };
+      setUser(res.data.user);
+      setToken(res.data.token);
+      return { success: true, data: res.data };
+    } catch (err) {
+      setAuthError(err.message);
+      return { success: false, error: err.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  /**
+   * Update Profile Details
+   */
+  const updateProfile = async (profileData) => {
+    setLoading(true);
+    setAuthError(null);
+    try {
+      const res = await authApi.updateProfile(profileData);
+      if (!res.success) {
+        throw new Error(res.message || 'Could not update profile details.');
+      }
+
+      setUser((prev) => ({ ...prev, ...res.data }));
+      return { success: true, data: res.data };
     } catch (err) {
       setAuthError(err.message);
       return { success: false, error: err.message };
@@ -140,12 +165,12 @@ export function AuthProvider({ children }) {
   /**
    * Sign out
    */
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     setToken(null);
     localStorage.removeItem('vanta_user');
     localStorage.removeItem('vanta_token');
-  };
+  }, []);
 
   return (
     <AuthContext.Provider
@@ -159,6 +184,7 @@ export function AuthProvider({ children }) {
         login,
         register,
         googleLogin,
+        updateProfile,
         logout,
       }}
     >

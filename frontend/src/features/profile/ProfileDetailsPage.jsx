@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, 
   Package, 
@@ -8,261 +9,138 @@ import {
   ShieldCheck, 
   Crown, 
   LogOut, 
-  ExternalLink, 
   Truck, 
   CheckCircle2, 
-  Clock, 
-  ChevronRight, 
-  Edit3, 
-  Plus, 
   Download, 
   Sparkles, 
   AlertCircle,
-  Eye,
-  EyeOff,
-  Bell,
-  Smartphone,
-  Flame,
-  Check
+  Check,
+  Sliders,
+  ShoppingCart,
+  Phone,
+  Mail,
+  ChevronRight,
+  ShoppingBag,
+  Plus
 } from 'lucide-react';
-import { useAuth, useUI } from '../../context';
-import { PRODUCTS } from '../../data/products';
+import { useAuth, useUI, useCart } from '../../context';
+import { vantaLogo } from '../../assets';
+import { ordersApi } from '../../services';
 
 export default function ProfileDetailsPage() {
-  const { user, isAuthenticated, logout, login, googleLogin } = useAuth();
-  const { goHome, activeProfileTab, setActiveProfileTab, openAuth } = useUI();
+  const { tab: urlTab } = useParams();
+  const navigate = useNavigate();
+  const { user, token, isAuthenticated, logout, googleLogin, updateProfile } = useAuth();
+  const { goHome, activeProfileTab, setActiveProfileTab, openAuth, goToAdminPage } = useUI();
+  const { cart, totalCount, openCart } = useCart();
 
-  const [activeTab, setActiveTab] = useState(activeProfileTab || 'orders');
+  // Active section controlled by Dynamic Island: 'orders' | 'details' | 'cart' | 'wallet'
+  const [activeTab, setActiveTab] = useState(urlTab || activeProfileTab || 'orders');
+  const [isIslandHovered, setIsIslandHovered] = useState(false);
 
-  // Form states for profile editing
-  const [name, setName] = useState(user?.name || 'Alex Mathio');
-  const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || '+91 98765 43210');
-  const [topSize, setTopSize] = useState('L');
-  const [shoeSize, setShoeSize] = useState('US 10.5');
+  // Synchronize directly with external navigation / URL parameter changes
+  useEffect(() => {
+    if (urlTab) {
+      setActiveTab(urlTab);
+      setActiveProfileTab(urlTab);
+    } else if (activeProfileTab) {
+      setActiveTab(activeProfileTab);
+    }
+  }, [urlTab, activeProfileTab]);
+
+  const switchTab = (t) => {
+    setActiveTab(t);
+    setActiveProfileTab(t);
+    navigate(`/profile/${t}`);
+  };
+
+  // Form states for personal info - dynamically populated from authenticated user
+  const [name, setName] = useState(user?.name || '');
+  const [phoneNumber, setPhoneNumber] = useState(user?.phoneNumber || user?.phone || '');
+  const [topSize, setTopSize] = useState(user?.preferences?.topSize || 'L');
+  const [shoeSize, setShoeSize] = useState(user?.preferences?.shoeSize || 'US 10.5');
   const [profileSaved, setProfileSaved] = useState(false);
 
-  // Address states
-  const [addresses, setAddresses] = useState([
-    {
-      id: 1,
-      name: 'Alex Mathio',
-      type: 'Home (Default)',
-      street: '42 Fashion Blvd, Penthouse 4B',
-      city: 'Mumbai',
-      state: 'Maharashtra',
-      postalCode: '400001',
-      country: 'India',
-      phone: '+91 98765 43210',
-      isDefault: true,
-    },
-    {
-      id: 2,
-      name: 'Alex Mathio (Studio)',
-      type: 'Studio Workspace',
-      street: 'VANTA Design Lab, 108 Creative District',
-      city: 'Mumbai',
-      state: 'Maharashtra',
-      postalCode: '400013',
-      country: 'India',
-      phone: '+91 98765 43211',
-      isDefault: false,
-    },
-  ]);
+  // Real orders array fetched from backend
+  const [orders, setOrders] = useState([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
 
-  const [showAddAddress, setShowAddAddress] = useState(false);
-  const [newStreet, setNewStreet] = useState('');
-  const [newCity, setNewCity] = useState('');
-  const [newPostal, setNewPostal] = useState('');
+  // Update local form state when user changes
+  useEffect(() => {
+    if (user) {
+      setName(user.name || '');
+      setPhoneNumber(user.phoneNumber || user.phone || '');
+    }
+  }, [user]);
 
-  // Password update states
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [passwordSuccess, setPasswordSuccess] = useState('');
-  const [passwordError, setPasswordError] = useState('');
-
-  // Sample realistic luxury orders
-  const [orders] = useState([
-    {
-      id: 'VNT-99824',
-      date: '25 Sep 2026',
-      status: 'In Transit',
-      carrier: 'DHL Express Global',
-      trackingNumber: 'DHL-8472910482',
-      estimatedDelivery: 'Tomorrow by 4:00 PM',
-      total: 280.0,
-      step: 3, // 1: Placed, 2: Prepared, 3: In Transit, 4: Delivered
-      items: [
-        {
-          name: 'VANTA Signature Heavyweight Fleece Set',
-          category: 'Tracksuits',
-          size: 'L',
-          color: 'Energetic Orange',
-          price: 145.0,
-          quantity: 1,
-          image: PRODUCTS[1]?.image || 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=400',
-        },
-        {
-          name: 'Retro VANTA Court Chunky Sneakers',
-          category: 'Footwear',
-          size: 'US 10.5',
-          color: 'White / Sunset Orange',
-          price: 135.0,
-          quantity: 1,
-          image: PRODUCTS[3]?.image || 'https://images.unsplash.com/photo-1549298916-b41d501d3772?w=400',
-        },
-      ],
-    },
-    {
-      id: 'VNT-87412',
-      date: '12 Sep 2026',
-      status: 'Delivered',
-      carrier: 'FedEx Priority',
-      trackingNumber: 'FDX-9948210331',
-      deliveryDate: '15 Sep 2026',
-      total: 134.99,
-      step: 4,
-      items: [
-        {
-          name: 'Loose Fit Hoodie',
-          category: 'Hoodies',
-          size: 'L',
-          color: 'Burgundy Maroon',
-          price: 24.99,
-          quantity: 1,
-          image: PRODUCTS[0]?.image || 'https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=400',
-        },
-        {
-          name: 'VANTA Origins Washed Vintage Hoodie',
-          category: 'Hoodies',
-          size: 'L',
-          color: 'Charcoal Black',
-          price: 110.0,
-          quantity: 1,
-          image: PRODUCTS[2]?.image || 'https://images.unsplash.com/photo-1509967419530-da38b4704bc6?w=400',
-        },
-      ],
-    },
-    {
-      id: 'VNT-75301',
-      date: '02 Aug 2026',
-      status: 'Delivered',
-      carrier: 'BlueDart Air',
-      trackingNumber: 'BDA-3104928172',
-      deliveryDate: '05 Aug 2026',
-      total: 120.0,
-      step: 4,
-      items: [
-        {
-          name: 'Striped Jacket',
-          category: 'Outerwear',
-          size: 'XL',
-          color: 'White / Black',
-          price: 120.0,
-          quantity: 1,
-          image: 'https://images.unsplash.com/photo-1544441893-675973e31985?w=400',
-        },
-      ],
-    },
-  ]);
-
-  const handleSaveProfile = (e) => {
-    e.preventDefault();
-    setProfileSaved(true);
-    setTimeout(() => setProfileSaved(false), 3000);
-  };
-
-  const handleAddAddress = (e) => {
-    e.preventDefault();
-    if (!newStreet.trim() || !newCity.trim()) return;
-
-    const newAddr = {
-      id: Date.now(),
-      name: name || 'Alex Mathio',
-      type: 'Alternative Address',
-      street: newStreet.trim(),
-      city: newCity.trim(),
-      state: 'Maharashtra',
-      postalCode: newPostal.trim() || '400001',
-      country: 'India',
-      phone: phoneNumber,
-      isDefault: false,
+  // Fetch genuine orders from backend if authenticated
+  useEffect(() => {
+    if (!token && !user) return;
+    const fetchOrders = async () => {
+      setOrdersLoading(true);
+      try {
+        const res = await ordersApi.getMyOrders();
+        if (res.success && Array.isArray(res.data)) {
+          setOrders(res.data);
+        }
+      } catch (err) {
+        // Silently keep orders as empty array if endpoint or network unavailable
+        setOrders([]);
+      } finally {
+        setOrdersLoading(false);
+      }
     };
+    fetchOrders();
+  }, [token, user]);
 
-    setAddresses([...addresses, newAddr]);
-    setNewStreet('');
-    setNewCity('');
-    setNewPostal('');
-    setShowAddAddress(false);
-  };
-
-  const handlePasswordSubmit = (e) => {
+  const handleSaveProfile = async (e) => {
     e.preventDefault();
-    setPasswordError('');
-    setPasswordSuccess('');
-
-    if (!currentPassword) {
-      setPasswordError('Please provide your current password.');
-      return;
+    try {
+      if (updateProfile) {
+        await updateProfile({ name, phoneNumber });
+      }
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 3000);
+    } catch (err) {
+      console.error('Failed to update profile:', err);
     }
-    if (newPassword.length < 6) {
-      setPasswordError('New password must be at least 6 characters long.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setPasswordError('New passwords do not match.');
-      return;
-    }
-
-    setPasswordSuccess('Password successfully updated! Your account security is intact.');
-    setCurrentPassword('');
-    setNewPassword('');
-    setConfirmPassword('');
-    setTimeout(() => setPasswordSuccess(''), 4000);
   };
 
-  // If visitor is guest, show high-end invitation screen
+  // If visitor is guest, show clean light-theme portal
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-neutral-950 text-white flex flex-col justify-between selection:bg-orange-500 selection:text-white relative">
-        <header className="px-6 sm:px-12 py-6 border-b border-white/10 flex items-center justify-between backdrop-blur-xl bg-neutral-950/80">
-          <button
-            onClick={goHome}
-            className="flex items-center gap-2 text-xs font-semibold text-neutral-400 hover:text-white transition-colors cursor-pointer group"
-          >
-            <ArrowLeft className="w-4 h-4 text-orange-400 group-hover:-translate-x-1 transition-transform" />
-            <span>Back to Storefront</span>
-          </button>
-          <div className="text-sm font-extrabold tracking-widest text-white font-cute uppercase">
-            VANTA CLIENTEL
-          </div>
-          <span className="text-xs text-orange-400 font-mono">ENCRYPTED</span>
-        </header>
-
+      <div className="min-h-screen bg-white text-neutral-900 flex flex-col justify-between selection:bg-orange-500 selection:text-white relative pt-12 font-['Outfit',sans-serif]">
         <div className="flex-1 flex items-center justify-center p-6">
-          <div className="max-w-md w-full text-center p-8 rounded-3xl bg-neutral-900/60 border border-white/10 backdrop-blur-2xl shadow-2xl relative">
-            <div className="w-16 h-16 mx-auto rounded-full bg-orange-500/10 border border-orange-500/30 flex items-center justify-center text-orange-400 mb-4 shadow-[0_0_30px_rgba(255,107,0,0.3)]">
+          <div className="max-w-md w-full text-center p-8 sm:p-10 rounded-3xl bg-neutral-50/80 border border-neutral-200 shadow-sm relative">
+            <div className="w-16 h-16 mx-auto rounded-full bg-orange-50 border border-orange-200 flex items-center justify-center text-orange-500 mb-4 shadow-xs">
               <Crown className="w-8 h-8" />
             </div>
 
-            <h2 className="text-2xl font-bold font-cute mb-2">Member Portal Restricted</h2>
-            <p className="text-xs text-neutral-400 mb-6 leading-relaxed">
-              Sign in or create an account to access order tracking, private vault drops, loyalty points, and client concierge services.
+            <h2 className="text-2xl font-bold text-neutral-900 mb-2">Member Portal Restricted</h2>
+            <p className="text-xs text-neutral-600 mb-6 leading-relaxed">
+              Sign in or create an account to access order tracking, personal info, saved delivery addresses, and VIP concierge drops.
             </p>
 
             <div className="space-y-3">
               <button
                 onClick={() => openAuth('login')}
-                className="w-full py-3.5 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm transition-all shadow-[0_10px_30px_rgba(255,107,0,0.35)] cursor-pointer"
+                className="w-full py-3.5 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm transition-all shadow-md shadow-orange-500/20 cursor-pointer"
               >
                 Sign In to Member Profile
               </button>
 
               <button
                 onClick={() => googleLogin()}
-                className="w-full py-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-white font-medium text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full py-3 rounded-2xl bg-white hover:bg-neutral-100 border border-neutral-200 text-neutral-800 font-medium text-xs transition-colors flex items-center justify-center gap-2 cursor-pointer shadow-xs"
               >
                 <span>Continue with Google 1-Click</span>
+              </button>
+
+              <button
+                onClick={goHome}
+                className="w-full py-2.5 text-xs text-neutral-500 hover:text-neutral-900 transition-colors"
+              >
+                Back to Storefront
               </button>
             </div>
           </div>
@@ -271,391 +149,467 @@ export default function ProfileDetailsPage() {
     );
   }
 
-  const currentUser = user || {
-    name: 'Alex Mathio',
-    email: 'alex@vanta.com',
-    role: 'customer',
-    avatar: { url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200' },
-  };
+  const currentUser = user || {};
+  const isAdmin = currentUser.role === 'admin' || currentUser.email === 'admin@vanta.com';
+  const memberId = currentUser._id ? `#VNT-${currentUser._id.slice(-6).toUpperCase()}` : '#VNT-MEMBER';
+  const vaultPoints = currentUser.vaultPoints || currentUser.points || 0;
 
   return (
-    <div className="min-h-screen bg-neutral-950 text-white flex flex-col justify-between selection:bg-orange-500 selection:text-white relative overflow-x-hidden font-sans">
-      {/* Background Luxury Ambient Glows */}
-      <div className="absolute top-20 -left-48 w-96 h-96 bg-orange-500/10 rounded-full blur-[140px] pointer-events-none" />
-      <div className="absolute top-1/2 -right-48 w-96 h-96 bg-orange-600/10 rounded-full blur-[160px] pointer-events-none" />
-
-      {/* 1. TOP HEADER & BREADCRUMBS */}
-      <header className="sticky top-0 z-40 px-6 sm:px-12 py-5 border-b border-white/10 backdrop-blur-2xl bg-neutral-950/80 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <div className="min-h-screen bg-white text-neutral-900 flex flex-col justify-between selection:bg-orange-500 selection:text-white relative overflow-x-hidden font-['Outfit',sans-serif]">
+      
+      {/* ======================================================== */}
+      {/* 1. DYNAMIC ISLAND FOR PROFILE PAGE                       */}
+      {/* (SHOWS ONLY ICONS; EXPANDS & SHOWS NAMES ON HOVER)       */}
+      {/* ======================================================== */}
+      <div className="sticky top-4 z-50 flex justify-center px-4 pointer-events-auto">
+        <nav
+          id="profile-dynamic-island"
+          onMouseEnter={() => setIsIslandHovered(true)}
+          onMouseLeave={() => setIsIslandHovered(false)}
+          className={`relative flex items-center rounded-full 
+            bg-neutral-950/95 backdrop-blur-2xl border border-white/20
+            shadow-[0_20px_50px_rgba(0,0,0,0.35),0_0_20px_rgba(255,107,0,0.15)]
+            transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
+            ${isIslandHovered ? 'px-4 py-2 scale-100' : 'px-3 py-1.5 scale-95 hover:scale-100'}
+          `}
+        >
+          {/* Logo Button (takes user to Storefront) */}
           <button
             onClick={goHome}
-            className="flex items-center gap-2 text-xs font-semibold text-neutral-400 hover:text-white transition-colors cursor-pointer group"
+            className="flex items-center gap-1.5 pr-2.5 border-r border-white/15 shrink-0 focus:outline-none cursor-pointer"
+            title="Return to Storefront"
           >
-            <ArrowLeft className="w-4 h-4 text-orange-400 group-hover:-translate-x-1 transition-transform" />
-            <span className="hidden sm:inline">Storefront</span>
+            <img src={vantaLogo} alt="VANTA" className="w-5 h-5 object-contain" />
+            <span className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] text-[11px] font-bold tracking-wider uppercase text-white whitespace-nowrap font-cute ${
+              isIslandHovered ? 'max-w-[70px] opacity-100 ml-1' : 'max-w-0 opacity-0 ml-0 pointer-events-none'
+            }`}>
+              VANTA
+            </span>
           </button>
-          <span className="text-neutral-600 hidden sm:inline">/</span>
-          <span className="text-xs uppercase tracking-widest text-neutral-400 font-mono hidden sm:inline">
-            CLIENT PROFILE
-          </span>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold tracking-wider uppercase bg-orange-500/15 border border-orange-500/30 text-orange-400">
-            <Crown className="w-3.5 h-3.5" />
-            VANTA BLACK COHORT
-          </span>
+          {/* DYNAMIC ISLAND NAVIGATION ITEMS */}
+          <div className="flex items-center gap-1 sm:gap-1.5 pl-1.5">
+            {/* 1. PRODUCT TRACKING */}
+            <button
+              onClick={() => switchTab('orders')}
+              className={`relative flex items-center rounded-full text-white/85 hover:text-white transition-all duration-300 cursor-pointer
+                ${isIslandHovered ? 'px-3 py-1.5' : 'p-2'}
+                ${activeTab === 'orders' ? 'bg-orange-500 text-white font-bold shadow-md shadow-orange-500/30' : 'hover:bg-white/10'}
+              `}
+              title="Product Tracking & Live Orders"
+            >
+              <Truck className={`w-4 h-4 transition-transform duration-300 ${activeTab === 'orders' ? 'text-white' : 'text-orange-400'}`} />
+              <span className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] text-xs font-semibold whitespace-nowrap ${
+                isIslandHovered ? 'max-w-[130px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0 pointer-events-none'
+              }`}>
+                Product Tracking
+              </span>
+            </button>
 
-          <button
-            onClick={() => {
-              logout();
-              goHome();
-            }}
-            className="p-2 rounded-xl bg-white/5 hover:bg-red-500/20 text-neutral-400 hover:text-red-400 border border-white/10 transition-colors cursor-pointer"
-            title="Sign Out"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
-        </div>
-      </header>
+            {/* 2. PERSONAL INFO */}
+            <button
+              onClick={() => switchTab('details')}
+              className={`relative flex items-center rounded-full text-white/85 hover:text-white transition-all duration-300 cursor-pointer
+                ${isIslandHovered ? 'px-3 py-1.5' : 'p-2'}
+                ${activeTab === 'details' ? 'bg-orange-500 text-white font-bold shadow-md shadow-orange-500/30' : 'hover:bg-white/10'}
+              `}
+              title="Personal Information"
+            >
+              <User className={`w-4 h-4 transition-transform duration-300 ${activeTab === 'details' ? 'text-white' : 'text-orange-400'}`} />
+              <span className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] text-xs font-semibold whitespace-nowrap ${
+                isIslandHovered ? 'max-w-[110px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0 pointer-events-none'
+              }`}>
+                Personal Info
+              </span>
+            </button>
 
-      {/* 2. MAIN PROFILE VIEWPORT */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 py-8 sm:py-12">
-        {/* HERO IDENTITY BANNER */}
-        <div className="relative p-6 sm:p-8 rounded-3xl bg-neutral-900/60 border border-white/10 backdrop-blur-2xl shadow-2xl mb-8 overflow-hidden">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-orange-500/15 via-transparent to-transparent pointer-events-none rounded-full" />
+            {/* 3. CART SECTION */}
+            <button
+              onClick={() => {
+                switchTab('cart');
+                openCart();
+              }}
+              className={`relative flex items-center rounded-full text-white/85 hover:text-white transition-all duration-300 cursor-pointer
+                ${isIslandHovered ? 'px-3 py-1.5' : 'p-2'}
+                ${activeTab === 'cart' ? 'bg-orange-500 text-white font-bold shadow-md shadow-orange-500/30' : 'hover:bg-white/10'}
+              `}
+              title="Cart Section"
+            >
+              <div className="relative flex items-center justify-center">
+                <ShoppingCart className={`w-4 h-4 transition-transform duration-300 ${activeTab === 'cart' ? 'text-white' : 'text-orange-400'}`} />
+                {totalCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2 min-w-[15px] h-[15px] flex items-center justify-center text-[9px] font-extrabold text-white bg-orange-600 rounded-full px-1 shadow-sm">
+                    {totalCount}
+                  </span>
+                )}
+              </div>
+              <span className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] text-xs font-semibold whitespace-nowrap ${
+                isIslandHovered ? 'max-w-[100px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0 pointer-events-none'
+              }`}>
+                Cart Section
+              </span>
+            </button>
+
+            {/* 4. PAYMENT & VAULT */}
+            <button
+              onClick={() => switchTab('wallet')}
+              className={`relative flex items-center rounded-full text-white/85 hover:text-white transition-all duration-300 cursor-pointer
+                ${isIslandHovered ? 'px-3 py-1.5' : 'p-2'}
+                ${activeTab === 'wallet' ? 'bg-orange-500 text-white font-bold shadow-md shadow-orange-500/30' : 'hover:bg-white/10'}
+              `}
+              title="Payment & Vault"
+            >
+              <CreditCard className={`w-4 h-4 transition-transform duration-300 ${activeTab === 'wallet' ? 'text-white' : 'text-orange-400'}`} />
+              <span className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] text-xs font-semibold whitespace-nowrap ${
+                isIslandHovered ? 'max-w-[80px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0 pointer-events-none'
+              }`}>
+                Payment
+              </span>
+            </button>
+
+            {/* 5. STOREFRONT DROPS */}
+            <button
+              onClick={goHome}
+              className={`relative flex items-center rounded-full text-white/80 hover:text-white hover:bg-white/10 transition-all duration-300 cursor-pointer
+                ${isIslandHovered ? 'px-3 py-1.5' : 'p-2'}
+              `}
+              title="Return to Storefront"
+            >
+              <ShoppingBag className="w-4 h-4 text-orange-400" />
+              <span className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] text-xs font-semibold whitespace-nowrap ${
+                isIslandHovered ? 'max-w-[90px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0 pointer-events-none'
+              }`}>
+                Storefront
+              </span>
+            </button>
+
+            {/* ADMIN CONSOLE SHORTCUT (IF ADMIN) */}
+            {isAdmin && (
+              <button
+                onClick={goToAdminPage}
+                className={`relative flex items-center rounded-full transition-all duration-300 cursor-pointer
+                  ${isIslandHovered ? 'px-3 py-1.5' : 'p-2'}
+                  bg-orange-500/20 text-orange-400 border border-orange-500/30 hover:bg-orange-500 hover:text-white
+                `}
+                title="Studio Admin Dashboard"
+              >
+                <Sliders className="w-4 h-4 text-orange-400" />
+                <span className={`overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] text-xs font-bold uppercase tracking-wider whitespace-nowrap ${
+                  isIslandHovered ? 'max-w-[80px] opacity-100 ml-2' : 'max-w-0 opacity-0 ml-0 pointer-events-none'
+                }`}>
+                  Admin
+                </span>
+              </button>
+            )}
+
+            {/* LOGOUT */}
+            <button
+              onClick={() => {
+                logout();
+                goHome();
+              }}
+              className="p-2 rounded-full text-neutral-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+              title="Sign Out"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Glossy Liquid Glass Highlight */}
+          <div className="absolute top-0 inset-x-6 h-[1px] bg-gradient-to-r from-transparent via-white/35 to-transparent pointer-events-none rounded-full" />
+        </nav>
+      </div>
+
+      {/* 2. MAIN PROFILE VIEWPORT IN 100% WHITE THEME */}
+      <main className="flex-1 max-w-6xl w-full mx-auto px-4 sm:px-8 py-6 sm:py-8">
+        
+        {/* HERO IDENTITY BANNER IN WHITE THEME */}
+        <div className="relative p-6 sm:p-8 rounded-3xl bg-neutral-50/70 border border-neutral-200 shadow-xs mb-8 overflow-hidden">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-orange-500/10 via-amber-500/5 to-transparent pointer-events-none rounded-full" />
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
             {/* User Info */}
             <div className="flex items-center gap-4 sm:gap-6">
               <div className="relative shrink-0">
-                <img
-                  src={currentUser.avatar?.url || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200'}
-                  alt={currentUser.name}
-                  className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover ring-2 ring-orange-500/50 shadow-xl"
-                />
-                <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-neutral-950 rounded-full" />
+                {currentUser.avatar?.url ? (
+                  <img
+                    src={currentUser.avatar.url}
+                    alt={currentUser.name || 'Member'}
+                    className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover ring-2 ring-orange-500/60 shadow-sm"
+                  />
+                ) : (
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-neutral-900 text-white font-bold text-xl sm:text-2xl flex items-center justify-center ring-2 ring-orange-500/60 shadow-sm">
+                    {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'V'}
+                  </div>
+                )}
+                <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 border-2 border-white rounded-full shadow-xs" />
               </div>
 
               <div>
                 <div className="flex items-center gap-2.5">
-                  <h1 className="text-xl sm:text-3xl font-extrabold text-white tracking-tight font-cute">
-                    {currentUser.name}
+                  <h1 className="text-xl sm:text-3xl font-extrabold text-neutral-900 tracking-tight">
+                    {currentUser.name || 'Verified Member'}
                   </h1>
-                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-orange-500 text-white shadow-sm">
+                  <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-orange-500 text-white shadow-xs">
                     {currentUser.role === 'admin' ? 'Studio Director' : 'VIP Member'}
                   </span>
                 </div>
-                <p className="text-xs sm:text-sm text-neutral-400 mt-1">
-                  {currentUser.email} • Member ID: <span className="font-mono text-orange-400">#VNT-89421</span>
+                <p className="text-xs sm:text-sm text-neutral-600 mt-1">
+                  {currentUser.email} • Member ID: <span className="font-mono text-orange-600 font-bold">{memberId}</span>
                 </p>
-                <div className="flex items-center gap-4 mt-2.5 text-xs text-neutral-400">
-                  <span className="flex items-center gap-1 text-emerald-400 font-medium">
+                <div className="flex items-center gap-4 mt-2.5 text-xs text-neutral-600">
+                  <span className="flex items-center gap-1 text-emerald-600 font-bold">
                     <CheckCircle2 className="w-3.5 h-3.5" /> Identity Verified
                   </span>
                   <span>•</span>
-                  <span>Joined October 2026</span>
+                  <span>Active Session</span>
                 </div>
               </div>
             </div>
 
-            {/* Quick Metrics Cards */}
-            <div className="grid grid-cols-3 gap-3 sm:gap-4 shrink-0">
-              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 text-center">
-                <span className="block text-[10px] uppercase font-bold text-neutral-400 tracking-wider">
+            {/* Metrics Chips */}
+            <div className="grid grid-cols-3 gap-3 shrink-0">
+              <div className="p-3.5 rounded-2xl bg-white border border-neutral-200 text-center shadow-xs">
+                <span className="block text-[10px] uppercase font-bold text-neutral-500 tracking-wider">
                   Total Orders
                 </span>
-                <span className="text-lg sm:text-2xl font-black text-white font-cute mt-0.5 block">
+                <span className="text-lg sm:text-2xl font-black text-neutral-900 mt-0.5 block">
                   {orders.length}
                 </span>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 text-center">
-                <span className="block text-[10px] uppercase font-bold text-neutral-400 tracking-wider">
+              <div className="p-3.5 rounded-2xl bg-white border border-neutral-200 text-center shadow-xs">
+                <span className="block text-[10px] uppercase font-bold text-neutral-500 tracking-wider">
                   Vault Points
                 </span>
-                <span className="text-lg sm:text-2xl font-black text-orange-400 font-cute mt-0.5 block">
-                  3,450
+                <span className="text-lg sm:text-2xl font-black text-orange-600 mt-0.5 block">
+                  {vaultPoints}
                 </span>
               </div>
 
-              <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 text-center">
-                <span className="block text-[10px] uppercase font-bold text-neutral-400 tracking-wider">
-                  Tier Status
+              <div className="p-3.5 rounded-2xl bg-white border border-neutral-200 text-center shadow-xs">
+                <span className="block text-[10px] uppercase font-bold text-neutral-500 tracking-wider">
+                  Cart Items
                 </span>
-                <span className="text-xs sm:text-sm font-bold text-white uppercase tracking-wider mt-1 block font-mono">
-                  BLACK 2.0
+                <span className="text-lg sm:text-2xl font-black text-neutral-900 mt-0.5 block">
+                  {totalCount}
                 </span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* 3. MULTI-TAB NAVIGATION BAR */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 border-b border-white/10 scrollbar-none">
-          {[
-            { id: 'orders', label: 'Orders & Tracking', icon: Package, badge: orders.length },
-            { id: 'details', label: 'Personal Information', icon: User },
-            { id: 'addresses', label: 'Address Book', icon: MapPin, badge: addresses.length },
-            { id: 'wallet', label: 'Payment & Vault', icon: CreditCard },
-            { id: 'vip', label: 'VIP Society Perks', icon: Crown },
-            { id: 'security', label: 'Security & Logins', icon: ShieldCheck },
-          ].map((tab) => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2.5 px-4 sm:px-5 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all shrink-0 cursor-pointer ${
-                  isActive
-                    ? 'bg-orange-500 text-white shadow-[0_5px_20px_rgba(255,107,0,0.35)]'
-                    : 'bg-neutral-900/60 text-neutral-400 hover:text-white hover:bg-neutral-800/80 border border-white/5'
-                }`}
-              >
-                <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-orange-400'}`} />
-                <span>{tab.label}</span>
-                {tab.badge !== undefined && (
-                  <span
-                    className={`text-[10px] font-extrabold px-1.5 py-0.2 rounded-full ${
-                      isActive ? 'bg-black/30 text-white' : 'bg-white/10 text-neutral-300'
-                    }`}
-                  >
-                    {tab.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* 4. TAB CONTENTS */}
-
-        {/* TAB 1: ORDERS & TRACKING */}
-        {activeTab === 'orders' && (
+        {/* SECTION 1: PRODUCT TRACKING & SHIPMENTS */}
+        {(activeTab === 'orders' || !activeTab) && (
           <div className="space-y-6 animate-fade-in">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 border-b border-neutral-200 gap-2">
               <div>
-                <h2 className="text-xl font-bold font-cute text-white">Order Archives & Shipments</h2>
-                <p className="text-xs text-neutral-400 mt-0.5">
-                  Live tracking, logistics milestones, and certified digital invoices.
+                <h2 className="text-xl font-bold text-neutral-900 flex items-center gap-2">
+                  <Truck className="w-5 h-5 text-orange-500" />
+                  <span>Product Tracking & Shipments</span>
+                </h2>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  Real-time parcel logistics, delivery checkpoints, and certified invoices.
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-neutral-400">All shipments routed via insured courier</span>
+              <span className="text-xs text-neutral-500 font-semibold bg-neutral-100 px-3 py-1.5 rounded-full border border-neutral-200">
+                {orders.length} Consignments
+              </span>
+            </div>
+
+            {ordersLoading ? (
+              <div className="p-12 text-center rounded-3xl bg-neutral-50/80 border border-neutral-200">
+                <div className="w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <p className="text-xs text-neutral-500">Checking your recent orders...</p>
               </div>
-            </div>
-
-            <div className="space-y-6">
-              {orders.map((order) => (
-                <div
-                  key={order.id}
-                  className="rounded-3xl bg-neutral-900/50 border border-white/10 p-6 sm:p-8 backdrop-blur-xl shadow-xl transition-all hover:border-white/20"
+            ) : orders.length === 0 ? (
+              /* REAL EMPTY STATE: NO ORDERS PLACED YET */
+              <div className="p-12 text-center rounded-3xl bg-neutral-50/80 border border-neutral-200">
+                <Package className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
+                <h3 className="text-base font-bold text-neutral-900">No Orders Placed Yet</h3>
+                <p className="text-xs text-neutral-500 mt-1 mb-5 max-w-sm mx-auto">
+                  When you purchase limited drops from the store, live tracking and consignment updates will be displayed here.
+                </p>
+                <button
+                  onClick={goHome}
+                  className="px-6 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs transition-colors cursor-pointer shadow-xs inline-flex items-center gap-2"
                 >
-                  {/* Order Top Bar */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-white/10 gap-4">
-                    <div>
+                  <ShoppingBag className="w-4 h-4" />
+                  <span>Explore Storefront Drops</span>
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {orders.map((order) => (
+                  <div
+                    key={order._id || order.id}
+                    className="rounded-3xl bg-white border border-neutral-200 p-6 sm:p-8 shadow-sm transition-all hover:shadow-md"
+                  >
+                    {/* Order Top Bar */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-neutral-200 gap-4">
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <span className="text-base sm:text-lg font-black text-neutral-900 tracking-wide font-mono">
+                            {order.orderNumber || order.id || order._id}
+                          </span>
+                          <span
+                            className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full flex items-center gap-1.5 ${
+                              order.status === 'In Transit'
+                                ? 'bg-amber-50 border border-amber-200 text-amber-700'
+                                : 'bg-emerald-50 border border-emerald-200 text-emerald-700'
+                            }`}
+                          >
+                            <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
+                            {order.status || 'Processing'}
+                          </span>
+                        </div>
+                        <p className="text-xs text-neutral-600 mt-1">
+                          Placed on {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : (order.date || 'Recent')} 
+                          {order.carrier && ` • Carrier: ${order.carrier}`}
+                        </p>
+                      </div>
+
                       <div className="flex items-center gap-3">
-                        <span className="text-base sm:text-lg font-black font-cute text-white tracking-wide">
-                          {order.id}
-                        </span>
-                        <span
-                          className={`text-[11px] font-bold uppercase tracking-wider px-3 py-1 rounded-full flex items-center gap-1.5 ${
-                            order.status === 'In Transit'
-                              ? 'bg-amber-500/15 border border-amber-500/30 text-amber-300'
-                              : 'bg-emerald-500/15 border border-emerald-500/30 text-emerald-300'
-                          }`}
+                        <button
+                          onClick={() => alert(`Downloading Certified Tax Invoice for ${order.orderNumber || order.id || order._id}...`)}
+                          className="px-3.5 py-2 rounded-xl bg-neutral-100 hover:bg-neutral-200 border border-neutral-200 text-xs font-semibold text-neutral-700 hover:text-neutral-900 transition-colors flex items-center gap-1.5 cursor-pointer"
                         >
-                          <span className="w-2 h-2 rounded-full bg-current animate-pulse" />
-                          {order.status}
+                          <Download className="w-3.5 h-3.5" />
+                          <span>Invoice</span>
+                        </button>
+
+                        <span className="text-lg font-black text-neutral-900">
+                          ${(order.totalPrice || order.total || 0).toFixed(2)}
                         </span>
                       </div>
-                      <p className="text-xs text-neutral-400 mt-1">
-                        Placed on {order.date} • Courier: <span className="text-white font-medium">{order.carrier}</span> ({order.trackingNumber})
-                      </p>
                     </div>
 
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => alert(`Downloading VAT Tax Invoice for ${order.id}...`)}
-                        className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-semibold text-neutral-300 hover:text-white transition-colors flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        <span>Invoice</span>
-                      </button>
-
-                      <span className="text-lg font-black font-cute text-white">
-                        ${order.total.toFixed(2)}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Visual Logistics Tracking Progress (for In-Transit orders) */}
-                  {order.status === 'In Transit' && (
-                    <div className="py-6 border-b border-white/10">
-                      <div className="flex items-center justify-between text-xs font-bold text-neutral-300 mb-3">
-                        <span className="flex items-center gap-1.5 text-orange-400">
-                          <Truck className="w-4 h-4 animate-bounce" />
-                          Estimated Delivery: {order.estimatedDelivery}
-                        </span>
-                        <span className="font-mono text-neutral-400">Hub: Milan Distribution Hub</span>
-                      </div>
-
-                      {/* 4-step progress line */}
-                      <div className="relative flex items-center justify-between">
-                        <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 h-1 bg-white/10 -z-0" />
+                    {/* Order Line Items */}
+                    <div className="pt-6 space-y-3">
+                      {(order.orderItems || order.items || []).map((item, idx) => (
                         <div
-                          className="absolute top-1/2 left-0 -translate-y-1/2 h-1 bg-gradient-to-r from-orange-500 to-amber-400 transition-all duration-500 -z-0"
-                          style={{ width: '70%' }}
-                        />
-
-                        {[
-                          { title: 'Confirmed', done: true },
-                          { title: 'Tailored / Packed', done: true },
-                          { title: 'In Transit (Air)', done: true, current: true },
-                          { title: 'Delivered', done: false },
-                        ].map((s, idx) => (
-                          <div key={idx} className="flex flex-col items-center relative z-10">
-                            <div
-                              className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
-                                s.done
-                                  ? 'bg-orange-500 text-white shadow-[0_0_15px_rgba(255,107,0,0.5)]'
-                                  : 'bg-neutral-800 text-neutral-500 border border-white/10'
-                              } ${s.current ? 'ring-4 ring-orange-500/30' : ''}`}
-                            >
-                              {s.done ? <Check className="w-4 h-4 stroke-[3]" /> : idx + 1}
+                          key={idx}
+                          className="flex items-center justify-between p-3.5 rounded-2xl bg-neutral-50 border border-neutral-200/80"
+                        >
+                          <div className="flex items-center gap-4">
+                            {item.image && (
+                              <img
+                                src={item.image}
+                                alt={item.name}
+                                className="w-14 h-14 rounded-xl object-cover shrink-0 ring-1 ring-neutral-200"
+                              />
+                            )}
+                            <div>
+                              <h4 className="text-sm font-bold text-neutral-900">{item.name}</h4>
+                              <p className="text-xs text-neutral-600 mt-0.5">
+                                Size: <span className="text-neutral-900 font-semibold">{item.size || 'Standard'}</span> • Qty: {item.quantity || item.qty || 1}
+                              </p>
                             </div>
-                            <span
-                              className={`text-[10px] font-bold uppercase tracking-wider mt-2 ${
-                                s.current ? 'text-orange-400 font-extrabold' : s.done ? 'text-white' : 'text-neutral-500'
-                              }`}
-                            >
-                              {s.title}
-                            </span>
                           </div>
-                        ))}
-                      </div>
+
+                          <div className="text-right">
+                            <span className="text-sm font-bold text-neutral-900">${(item.price || 0).toFixed(2)}</span>
+                            <span className="block text-[10px] text-emerald-600 font-bold uppercase">Confirmed Item</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
-
-                  {/* Order Line Items */}
-                  <div className="pt-6 space-y-4">
-                    {order.items.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5"
-                      >
-                        <div className="flex items-center gap-4">
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="w-14 h-14 rounded-xl object-cover shrink-0 ring-1 ring-white/10"
-                          />
-                          <div>
-                            <h4 className="text-sm font-bold text-white">{item.name}</h4>
-                            <p className="text-xs text-neutral-400 mt-0.5">
-                              Size: <span className="text-white font-medium">{item.size}</span> • Color: <span className="text-white font-medium">{item.color}</span> • Qty: {item.quantity}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="text-right">
-                          <span className="text-sm font-bold text-white">${item.price.toFixed(2)}</span>
-                          <span className="block text-[10px] text-emerald-400 font-semibold uppercase">Verified Authentic</span>
-                        </div>
-                      </div>
-                    ))}
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* TAB 2: PERSONAL INFORMATION */}
+        {/* SECTION 2: PERSONAL INFORMATION */}
         {activeTab === 'details' && (
-          <div className="max-w-3xl space-y-6 animate-fade-in">
-            <div>
-              <h2 className="text-xl font-bold font-cute text-white">Client Personal File</h2>
-              <p className="text-xs text-neutral-400 mt-0.5">
-                Update your identity details, contact info, and tailored silhouette preferences.
+          <div className="space-y-6 animate-fade-in max-w-3xl">
+            <div className="pb-2 border-b border-neutral-200">
+              <h2 className="text-xl font-bold text-neutral-900 flex items-center gap-2">
+                <User className="w-5 h-5 text-orange-500" />
+                <span>Personal Information</span>
+              </h2>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Update client identity, contact channels, and customized sizing preferences.
               </p>
             </div>
 
             {profileSaved && (
-              <div className="p-4 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>Client profile updated successfully across all global nodes.</span>
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2.5">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>Personal information updated successfully across all servers.</span>
               </div>
             )}
 
-            <form onSubmit={handleSaveProfile} className="p-6 sm:p-8 rounded-3xl bg-neutral-900/50 border border-white/10 space-y-6 backdrop-blur-xl">
+            <form onSubmit={handleSaveProfile} className="p-6 sm:p-8 rounded-3xl bg-white border border-neutral-200 shadow-sm space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <div>
-                  <label className="block text-xs uppercase tracking-wider font-semibold text-neutral-300 mb-2">
+                  <label className="block text-xs uppercase tracking-wider font-bold text-neutral-700 mb-2">
                     Full Legal Name
                   </label>
                   <input
                     type="text"
                     value={name}
+                    placeholder="Enter your full name"
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/15 focus:border-orange-500 text-sm text-white outline-none"
+                    className="w-full px-4 py-3 rounded-2xl bg-white border border-neutral-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 text-sm text-neutral-900 outline-none transition-all"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs uppercase tracking-wider font-semibold text-neutral-300 mb-2">
+                  <label className="block text-xs uppercase tracking-wider font-bold text-neutral-700 mb-2">
                     Email Address (Registered)
                   </label>
                   <input
                     type="email"
-                    value={currentUser.email}
+                    value={currentUser.email || ''}
                     disabled
-                    className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-neutral-400 text-sm cursor-not-allowed"
+                    className="w-full px-4 py-3 rounded-2xl bg-neutral-100 border border-neutral-200 text-neutral-500 text-sm cursor-not-allowed"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs uppercase tracking-wider font-semibold text-neutral-300 mb-2">
+                  <label className="block text-xs uppercase tracking-wider font-bold text-neutral-700 mb-2">
                     Direct Phone / WhatsApp
                   </label>
                   <input
                     type="tel"
                     value={phoneNumber}
+                    placeholder="Enter contact number"
                     onChange={(e) => setPhoneNumber(e.target.value)}
-                    className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/15 focus:border-orange-500 text-sm text-white outline-none"
+                    className="w-full px-4 py-3 rounded-2xl bg-white border border-neutral-300 focus:border-orange-500 focus:ring-2 focus:ring-orange-500/20 text-sm text-neutral-900 outline-none transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs uppercase tracking-wider font-semibold text-neutral-300 mb-2">
-                    Country / Regional Market
+                  <label className="block text-xs uppercase tracking-wider font-bold text-neutral-700 mb-2">
+                    Role & Account Type
                   </label>
                   <input
                     type="text"
-                    defaultValue="India (IN)"
+                    value={currentUser.role === 'admin' ? 'Studio Administrator' : 'Standard Customer'}
                     disabled
-                    className="w-full px-4 py-3 rounded-2xl bg-white/5 border border-white/10 text-neutral-400 text-sm cursor-not-allowed"
+                    className="w-full px-4 py-3 rounded-2xl bg-neutral-100 border border-neutral-200 text-neutral-500 text-sm cursor-not-allowed"
                   />
                 </div>
               </div>
 
               {/* Sizing Preferences */}
-              <div className="pt-6 border-t border-white/10">
-                <h4 className="text-xs uppercase tracking-wider font-bold text-orange-400 mb-3 flex items-center gap-1.5">
+              <div className="pt-6 border-t border-neutral-200">
+                <h4 className="text-xs uppercase tracking-wider font-bold text-orange-600 mb-3 flex items-center gap-1.5">
                   <Sparkles className="w-3.5 h-3.5" />
-                  Tailored Sizing Preferences (Auto-Applied to Drops)
+                  Tailored Sizing Fit (Auto-Applied to Drops)
                 </h4>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <div>
-                    <label className="block text-[11px] text-neutral-400 mb-1">Tops & Hoodies</label>
+                    <label className="block text-[11px] text-neutral-600 mb-1 font-semibold">Tops & Hoodies</label>
                     <select
                       value={topSize}
                       onChange={(e) => setTopSize(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-neutral-900 border border-white/15 text-xs text-white focus:border-orange-500 outline-none"
+                      className="w-full px-3 py-2.5 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 focus:border-orange-500 outline-none"
                     >
                       <option value="S">S (Small - Fitted)</option>
                       <option value="M">M (Medium - Standard)</option>
@@ -665,11 +619,11 @@ export default function ProfileDetailsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-[11px] text-neutral-400 mb-1">Sneaker Size</label>
+                    <label className="block text-[11px] text-neutral-600 mb-1 font-semibold">Sneakers / Footwear</label>
                     <select
                       value={shoeSize}
                       onChange={(e) => setShoeSize(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-neutral-900 border border-white/15 text-xs text-white focus:border-orange-500 outline-none"
+                      className="w-full px-3 py-2.5 rounded-xl bg-white border border-neutral-300 text-xs text-neutral-900 focus:border-orange-500 outline-none"
                     >
                       <option value="US 9">US 9.0 (EU 42)</option>
                       <option value="US 9.5">US 9.5 (EU 43)</option>
@@ -683,197 +637,150 @@ export default function ProfileDetailsPage() {
 
               <button
                 type="submit"
-                className="py-3.5 px-6 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm tracking-wide transition-all shadow-[0_10px_30px_rgba(255,107,0,0.3)] cursor-pointer"
+                className="py-3.5 px-6 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-sm tracking-wide transition-all shadow-md shadow-orange-500/20 cursor-pointer"
               >
-                Save Client Information
+                Save Personal Information
               </button>
             </form>
           </div>
         )}
 
-        {/* TAB 3: ADDRESS BOOK */}
-        {activeTab === 'addresses' && (
-          <div className="space-y-6 animate-fade-in">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        {/* SECTION 3: CART SECTION */}
+        {activeTab === 'cart' && (
+          <div className="space-y-6 animate-fade-in max-w-3xl">
+            <div className="pb-2 border-b border-neutral-200 flex items-center justify-between">
               <div>
-                <h2 className="text-xl font-bold font-cute text-white">Saved Delivery Destinations</h2>
-                <p className="text-xs text-neutral-400 mt-0.5">
-                  Manage primary residences and private studio addresses for express courier drops.
+                <h2 className="text-xl font-bold text-neutral-900 flex items-center gap-2">
+                  <ShoppingCart className="w-5 h-5 text-orange-500" />
+                  <span>Cart Section</span>
+                </h2>
+                <p className="text-xs text-neutral-500 mt-0.5">
+                  Review selected capsule drops, sizes, and checkout preparation.
                 </p>
               </div>
 
               <button
-                onClick={() => setShowAddAddress(!showAddAddress)}
-                className="px-4 py-2.5 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs uppercase tracking-wider transition-all flex items-center gap-1.5 cursor-pointer shadow-md"
+                onClick={openCart}
+                className="px-4 py-2 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
               >
-                <Plus className="w-4 h-4" />
-                <span>Add Destination</span>
+                <span>Open Cart Drawer</span>
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
 
-            {/* Add Address Form Modal / Box */}
-            {showAddAddress && (
-              <form onSubmit={handleAddAddress} className="p-6 rounded-3xl bg-neutral-900 border border-orange-500/50 space-y-4">
-                <h4 className="text-sm font-bold text-white font-cute">New Delivery Address</h4>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <input
-                    type="text"
-                    value={newStreet}
-                    onChange={(e) => setNewStreet(e.target.value)}
-                    placeholder="Street & Apartment Number"
-                    className="sm:col-span-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-xs text-white outline-none"
-                    required
-                  />
-                  <input
-                    type="text"
-                    value={newCity}
-                    onChange={(e) => setNewCity(e.target.value)}
-                    placeholder="City (e.g. Mumbai)"
-                    className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-xs text-white outline-none"
-                    required
-                  />
-                  <input
-                    type="text"
-                    value={newPostal}
-                    onChange={(e) => setNewPostal(e.target.value)}
-                    placeholder="Postal PIN Code"
-                    className="px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 text-xs text-white outline-none"
-                  />
-                </div>
-                <div className="flex justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowAddAddress(false)}
-                    className="px-4 py-2 rounded-xl bg-white/5 text-xs text-neutral-400 hover:text-white"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-4 py-2 rounded-xl bg-orange-500 text-xs font-bold text-white"
-                  >
-                    Save Address
-                  </button>
-                </div>
-              </form>
-            )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {addresses.map((addr) => (
-                <div
-                  key={addr.id}
-                  className="p-6 rounded-3xl bg-neutral-900/60 border border-white/10 hover:border-white/20 transition-all flex flex-col justify-between"
+            {cart.length === 0 ? (
+              <div className="p-12 text-center rounded-3xl bg-neutral-50 border border-neutral-200">
+                <ShoppingCart className="w-12 h-12 text-neutral-300 mx-auto mb-3" />
+                <h3 className="text-base font-bold text-neutral-900">Your Cart is Currently Empty</h3>
+                <p className="text-xs text-neutral-500 mt-1 mb-6">Explore the latest drops in the storefront and add your favorite pieces.</p>
+                <button
+                  onClick={goHome}
+                  className="px-6 py-2.5 rounded-xl bg-neutral-900 hover:bg-neutral-800 text-white font-bold text-xs transition-colors cursor-pointer"
                 >
-                  <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-bold text-white font-cute">{addr.type}</span>
-                      {addr.isDefault && (
-                        <span className="text-[10px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                          Primary
-                        </span>
-                      )}
+                  Explore Drops
+                </button>
+              </div>
+            ) : (
+              <div className="rounded-3xl bg-white border border-neutral-200 p-6 sm:p-8 shadow-sm space-y-4">
+                <div className="divide-y divide-neutral-200">
+                  {cart.map((item, idx) => (
+                    <div key={idx} className="py-4 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <img src={item.image} alt={item.name} className="w-14 h-14 rounded-xl object-cover ring-1 ring-neutral-200" />
+                        <div>
+                          <h4 className="text-sm font-bold text-neutral-900">{item.name}</h4>
+                          <p className="text-xs text-neutral-500">Size: {item.size || 'L'} • Qty: {item.quantity || 1}</p>
+                        </div>
+                      </div>
+                      <span className="font-bold text-sm text-neutral-900">${(item.price * (item.quantity || 1)).toFixed(2)}</span>
                     </div>
-
-                    <div className="space-y-1 text-xs text-neutral-300">
-                      <p className="font-semibold text-white">{addr.name}</p>
-                      <p>{addr.street}</p>
-                      <p>{addr.city}, {addr.state} {addr.postalCode}</p>
-                      <p>{addr.country}</p>
-                      <p className="text-neutral-400 pt-1">Phone: {addr.phone}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 pt-4 border-t border-white/10 mt-4 text-xs">
-                    <button
-                      onClick={() => alert(`Address ${addr.id} updated.`)}
-                      className="text-neutral-400 hover:text-white font-semibold transition-colors cursor-pointer flex items-center gap-1"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" /> Edit
-                    </button>
-                    <span>•</span>
-                    <button
-                      onClick={() => setAddresses(addresses.filter(a => a.id !== addr.id))}
-                      className="text-neutral-400 hover:text-red-400 transition-colors cursor-pointer"
-                    >
-                      Delete
-                    </button>
-                  </div>
+                  ))}
                 </div>
-              ))}
-            </div>
+
+                <div className="pt-4 border-t border-neutral-200 flex justify-end">
+                  <button
+                    onClick={openCart}
+                    className="px-6 py-3 rounded-2xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md shadow-orange-500/20 cursor-pointer"
+                  >
+                    Proceed to Fast Checkout
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* TAB 4: PAYMENT & VAULT WALLET */}
+        {/* SECTION 4: PAYMENT & DIGITAL VAULT */}
         {activeTab === 'wallet' && (
           <div className="space-y-6 animate-fade-in max-w-4xl">
-            <div>
-              <h2 className="text-xl font-bold font-cute text-white">Payment Vault & Digital Wallet</h2>
-              <p className="text-xs text-neutral-400 mt-0.5">
-                Saved luxury cards, instant 1-click checkout credentials, and vault credits balance.
+            <div className="pb-2 border-b border-neutral-200">
+              <h2 className="text-xl font-bold text-neutral-900 flex items-center gap-2">
+                <CreditCard className="w-5 h-5 text-orange-500" />
+                <span>Payment & Digital Vault</span>
+              </h2>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Saved luxury payment cards, instant checkout credentials, and vault credits.
               </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-              {/* Titanium Luxury Card Mockup */}
-              <div className="relative p-6 sm:p-8 rounded-3xl bg-gradient-to-tr from-neutral-950 via-neutral-900 to-neutral-800 border border-white/20 shadow-2xl text-white overflow-hidden aspect-[1.58/1] flex flex-col justify-between">
-                <div className="absolute top-0 right-0 w-44 h-44 bg-orange-500/20 rounded-full blur-3xl pointer-events-none" />
+              {/* Payment Methods (Real Empty State) */}
+              <div className="p-6 sm:p-8 rounded-3xl bg-white border border-neutral-200 shadow-sm flex flex-col justify-between min-h-[220px]">
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-xs font-bold uppercase tracking-wider text-neutral-700">
+                      Saved Payment Methods
+                    </span>
+                    <span className="text-[10px] font-bold text-neutral-500 bg-neutral-100 border border-neutral-200 px-2 py-0.5 rounded-full">
+                      Zero Saved
+                    </span>
+                  </div>
 
-                <div className="flex items-center justify-between relative z-10">
-                  <span className="text-xs font-black tracking-widest uppercase font-mono text-orange-400">
-                    VANTA BLACK TITANIUM
-                  </span>
-                  <span className="text-sm font-black font-cute tracking-tight text-white">
-                    VISA SIGNATURE
-                  </span>
+                  <div className="py-6 text-center">
+                    <CreditCard className="w-10 h-10 text-neutral-300 mx-auto mb-2" />
+                    <h4 className="text-sm font-bold text-neutral-800">No Cards Saved</h4>
+                    <p className="text-xs text-neutral-500 mt-1 max-w-xs mx-auto">
+                      Credit and debit cards securely saved during checkout will be vaulted here for 1-click ordering.
+                    </p>
+                  </div>
                 </div>
 
-                <div className="relative z-10 py-4">
-                  <div className="w-10 h-8 rounded-lg bg-amber-200/40 border border-amber-300/40 mb-4 flex items-center justify-center">
-                    <div className="w-6 h-4 border border-amber-400/50 rounded-sm" />
-                  </div>
-                  <span className="font-mono text-lg sm:text-xl tracking-widest text-neutral-200">
-                    •••• •••• •••• 4829
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between text-xs font-mono relative z-10 text-neutral-400">
-                  <div>
-                    <span className="text-[9px] uppercase tracking-wider block">Card Holder</span>
-                    <span className="text-white font-bold">{currentUser.name.toUpperCase()}</span>
-                  </div>
-                  <div>
-                    <span className="text-[9px] uppercase tracking-wider block">Expires</span>
-                    <span className="text-white font-bold">09/29</span>
-                  </div>
+                <div className="pt-4 border-t border-neutral-200 mt-2">
+                  <button
+                    onClick={() => alert('Cards are securely added during checkout with 256-bit encryption.')}
+                    className="w-full py-2.5 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-xs font-bold text-neutral-800 transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Add Payment Method</span>
+                  </button>
                 </div>
               </div>
 
-              {/* Vault Balance Card */}
-              <div className="p-6 sm:p-8 rounded-3xl bg-neutral-900/60 border border-white/10 backdrop-blur-xl flex flex-col justify-between h-full">
+              {/* Vault Credits Card */}
+              <div className="p-6 sm:p-8 rounded-3xl bg-white border border-neutral-200 shadow-sm flex flex-col justify-between h-full">
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-xs font-bold uppercase tracking-wider text-orange-400">
+                    <span className="text-xs font-bold uppercase tracking-wider text-orange-600">
                       Vault Store Credit
                     </span>
-                    <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                      Ready to spend
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                      Live Balance
                     </span>
                   </div>
 
-                  <div className="text-3xl sm:text-4xl font-black font-cute text-white">
-                    $34.50 <span className="text-xs text-neutral-400 font-sans font-normal">(3,450 PTS)</span>
+                  <div className="text-3xl sm:text-4xl font-black text-neutral-900">
+                    ${(vaultPoints * 0.01).toFixed(2)} <span className="text-xs text-neutral-500 font-normal">({vaultPoints} PTS)</span>
                   </div>
 
-                  <p className="text-xs text-neutral-400 mt-2 leading-relaxed">
-                    Earn 5% back in Vault Credits on every order. Credits automatically apply to your cart upon checkout.
+                  <p className="text-xs text-neutral-600 mt-2 leading-relaxed">
+                    Earn 5% back in Vault Credits on every drop order. Credits automatically apply to your cart checkout.
                   </p>
                 </div>
 
-                <div className="pt-6 border-t border-white/10 mt-6">
+                <div className="pt-6 border-t border-neutral-200 mt-6">
                   <button
                     onClick={() => alert('Gift cards and balance reload is available via concierge.')}
-                    className="w-full py-3 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-bold text-white transition-colors cursor-pointer"
+                    className="w-full py-3 rounded-2xl bg-neutral-900 hover:bg-neutral-800 text-xs font-bold text-white transition-colors cursor-pointer shadow-xs"
                   >
                     Redeem Voucher or Gift Card
                   </button>
@@ -882,160 +789,10 @@ export default function ProfileDetailsPage() {
             </div>
           </div>
         )}
-
-        {/* TAB 5: VIP SOCIETY BENEFITS */}
-        {activeTab === 'vip' && (
-          <div className="space-y-6 animate-fade-in max-w-4xl">
-            <div>
-              <h2 className="text-xl font-bold font-cute text-white">VANTA VIP Society Allocation</h2>
-              <p className="text-xs text-neutral-400 mt-0.5">
-                Exclusive privileges unlocked for Tier 2.0 Black Members.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {[
-                { title: '48h Early Drop Access', desc: 'Secure drops and limited capsules before global public release.', active: true },
-                { title: 'Free Worldwide Express', desc: 'Complimentary expedited delivery on all orders without threshold.', active: true },
-                { title: 'Personal Concierge Fitting', desc: 'Direct WhatsApp and stylist consultations for custom sizing.', active: true },
-                { title: 'Private Vault Archive', desc: 'Access to vault re-issues and prototype unreleased garments.', active: true },
-                { title: 'Bespoke Atelier Alterations', desc: 'Free lifetime hemming and sizing adjustments in partner ateliers.', active: false },
-                { title: 'Milan & Tokyo Runway Invitations', desc: 'Seasonal physical showroom and afterparty entry tickets.', active: false },
-              ].map((perk, idx) => (
-                <div
-                  key={idx}
-                  className={`p-5 rounded-2xl border transition-all ${
-                    perk.active
-                      ? 'bg-neutral-900/60 border-orange-500/30 shadow-[0_0_20px_rgba(255,107,0,0.08)]'
-                      : 'bg-neutral-900/30 border-white/5 opacity-60'
-                  }`}
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="text-sm font-bold text-white font-cute">{perk.title}</h4>
-                    <span
-                      className={`text-[9px] font-extrabold uppercase px-2 py-0.5 rounded-full ${
-                        perk.active ? 'bg-orange-500 text-white' : 'bg-white/10 text-neutral-400'
-                      }`}
-                    >
-                      {perk.active ? 'Unlocked' : 'Tier 3 Locked'}
-                    </span>
-                  </div>
-                  <p className="text-xs text-neutral-400 leading-relaxed">{perk.desc}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* TAB 6: SECURITY & PREFERENCES */}
-        {activeTab === 'security' && (
-          <div className="max-w-3xl space-y-6 animate-fade-in">
-            <div>
-              <h2 className="text-xl font-bold font-cute text-white">Security & Account Access</h2>
-              <p className="text-xs text-neutral-400 mt-0.5">
-                Manage your master password, 2-factor authentication, and connected credentials.
-              </p>
-            </div>
-
-            {/* Password Update Form */}
-            <form onSubmit={handlePasswordSubmit} className="p-6 sm:p-8 rounded-3xl bg-neutral-900/50 border border-white/10 space-y-5 backdrop-blur-xl">
-              <h4 className="text-sm font-bold text-white font-cute">Change Master Password</h4>
-
-              {passwordError && (
-                <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-300 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
-                  <span>{passwordError}</span>
-                </div>
-              )}
-
-              {passwordSuccess && (
-                <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs flex items-center gap-2">
-                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
-                  <span>{passwordSuccess}</span>
-                </div>
-              )}
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-xs uppercase tracking-wider font-semibold text-neutral-300 mb-1.5">
-                    Current Password
-                  </label>
-                  <input
-                    type="password"
-                    value={currentPassword}
-                    onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 focus:border-orange-500 text-sm text-white outline-none"
-                    required
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs uppercase tracking-wider font-semibold text-neutral-300 mb-1.5">
-                      New Password
-                    </label>
-                    <input
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      placeholder="Minimum 6 characters"
-                      className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 focus:border-orange-500 text-sm text-white outline-none"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs uppercase tracking-wider font-semibold text-neutral-300 mb-1.5">
-                      Confirm New Password
-                    </label>
-                    <input
-                      type="password"
-                      value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full px-4 py-2.5 rounded-xl bg-white/5 border border-white/15 focus:border-orange-500 text-sm text-white outline-none"
-                      required
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="py-3 px-5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md cursor-pointer"
-              >
-                Update Password
-              </button>
-            </form>
-
-            {/* Connected Providers */}
-            <div className="p-6 rounded-3xl bg-neutral-900/50 border border-white/10 space-y-4">
-              <h4 className="text-sm font-bold text-white font-cute">Connected Authentication</h4>
-              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/5 border border-white/5">
-                <div className="flex items-center gap-3">
-                  <svg className="w-5 h-5 shrink-0" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.665-5.17 3.665-9.17z" />
-                    <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.88-3.05c-1.08.72-2.45 1.16-4.05 1.16-3.12 0-5.77-2.1-6.72-4.93H1.25v3.15C3.26 21.36 7.33 24 12 24z" />
-                    <path fill="#FBBC05" d="M5.28 14.27c-.25-.72-.38-1.49-.38-2.27s.13-1.55.38-2.27V6.58H1.25C.45 8.18 0 10.03 0 12s.45 3.82 1.25 5.42l4.03-3.15z" />
-                    <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.42-3.42C17.95 1.19 15.24 0 12 0 7.33 0 3.26 2.64 1.25 6.58l4.03 3.15c.95-2.83 3.6-4.98 6.72-4.98z" />
-                  </svg>
-                  <div>
-                    <h5 className="text-xs font-bold text-white">Google Authentication</h5>
-                    <p className="text-[11px] text-neutral-400">1-click biometric & OAuth sign in enabled</p>
-                  </div>
-                </div>
-                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-500/20">
-                  Connected
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
       </main>
 
-      {/* FOOTER */}
-      <footer className="px-6 py-5 text-center text-xs text-neutral-500 border-t border-white/10 bg-neutral-950/80">
+      {/* FOOTER IN WHITE THEME */}
+      <footer className="px-6 py-6 text-center text-xs text-neutral-500 border-t border-neutral-200 bg-white">
         &copy; {new Date().getFullYear()} VANTA Apparel Group. Encrypted Client Environment.
       </footer>
     </div>

@@ -1,88 +1,110 @@
-import React from 'react';
-import { CartProvider, UIProvider, AuthProvider, useUI } from './context';
-import { 
-  DynamicIslandNav, 
-  TopBrandHeader, 
-  Footer, 
-  CartDrawer, 
+import React, { useEffect } from "react";
+import { Routes, Route, useLocation } from "react-router-dom";
+import { CartProvider, UIProvider, AuthProvider, ToastProvider, useUI } from "./context";
+import {
+  DynamicIslandNav,
+  TopBrandHeader,
+  Footer,
+  CartDrawer,
   SearchModal,
   AuthModal,
-  Preloader 
-} from './components';
-import { 
-  HeroSection, 
-  PhilosophyBanner, 
-  FeaturedDrops, 
+  Preloader,
+  ToastContainer,
+} from "./components";
+import {
+  HeroSection,
+  PhilosophyBanner,
+  FeaturedDrops,
   ProductDetailPage,
   AuthPage,
-  ProfileDetailsPage 
-} from './features';
+  ProfileDetailsPage,
+  AdminDashboard,
+  NotFoundPage,
+} from "./features";
+
+function HomeView({ scrollToShop: shouldScroll = false }) {
+  useEffect(() => {
+    if (shouldScroll) {
+      setTimeout(() => {
+        const el = document.getElementById("shop");
+        if (el) el.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+    }
+  }, [shouldScroll]);
+
+  const handleExplore = () => {
+    const el = document.getElementById("shop");
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  };
+
+  return (
+    <>
+      <HeroSection onExploreClick={handleExplore} />
+      <FeaturedDrops />
+      <PhilosophyBanner />
+    </>
+  );
+}
 
 function MainContent() {
-  const { selectedProduct, goHome, showPreloader, finishPreloader, activeView } = useUI();
+  const location = useLocation();
+  const { showPreloader, finishPreloader } = useUI();
 
-  const scrollToShop = () => {
-    if (selectedProduct || activeView !== 'home') {
-      goHome();
-      setTimeout(() => {
-        const el = document.getElementById('shop');
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-    } else {
-      const el = document.getElementById('shop');
-      if (el) el.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
+  const isAuthRoute = location.pathname.startsWith("/auth");
+  const isProfileRoute = location.pathname.startsWith("/profile");
+  const isAdminRoute = location.pathname.startsWith("/admin");
 
   return (
     <div className="min-h-screen bg-white text-neutral-900 selection:bg-orange-500 selection:text-white flex flex-col font-['Outfit',sans-serif] relative">
       {/* 0. Master Animated Preloader */}
       {showPreloader && <Preloader onComplete={finishPreloader} />}
 
-      {/* 1. Global Interactive Navigation */}
-      {activeView === 'home' && (
+      {/* 1. Global Interactive Navigation (Hidden on Auth, Profile, and Admin Views) */}
+      {!isAuthRoute && !isProfileRoute && !isAdminRoute && (
         <>
           <DynamicIslandNav />
           <TopBrandHeader />
         </>
       )}
 
-      {/* 2. Main Viewport Router */}
+      {/* 2. React Router Master Viewport */}
       <main className="flex-1">
-        {activeView === 'auth' ? (
-          <AuthPage />
-        ) : activeView === 'profile' ? (
-          <ProfileDetailsPage />
-        ) : selectedProduct ? (
-          <ProductDetailPage product={selectedProduct} />
-        ) : (
-          <>
-            <HeroSection onExploreClick={scrollToShop} />
-            <FeaturedDrops />
-            <PhilosophyBanner />
-          </>
-        )}
+        <Routes>
+          <Route path="/" element={<HomeView />} />
+          <Route path="/shop" element={<HomeView scrollToShop={true} />} />
+          <Route path="/product/:id" element={<ProductDetailPage />} />
+          <Route path="/profile" element={<ProfileDetailsPage />} />
+          <Route path="/profile/:tab" element={<ProfileDetailsPage />} />
+          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin/:section" element={<AdminDashboard />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
       </main>
 
-      {/* 3. Global Footer */}
-      {activeView === 'home' && <Footer />}
+      {/* 3. Global Footer (Hidden on Auth and Admin views) */}
+      {!isAuthRoute && !isProfileRoute && !isAdminRoute && <Footer />}
 
-      {/* 4. Global Modals and Drawers */}
+      {/* 4. Global Modals, Drawers and Toast Notifications */}
       <SearchModal />
       <CartDrawer />
       <AuthModal />
+      <ToastContainer />
     </div>
   );
 }
 
 export default function App() {
   return (
-    <AuthProvider>
-      <CartProvider>
-        <UIProvider>
-          <MainContent />
-        </UIProvider>
-      </CartProvider>
-    </AuthProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <CartProvider>
+          <UIProvider>
+            <MainContent />
+          </UIProvider>
+        </CartProvider>
+      </AuthProvider>
+    </ToastProvider>
   );
 }
+

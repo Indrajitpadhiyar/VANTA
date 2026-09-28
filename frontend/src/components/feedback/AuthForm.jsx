@@ -235,7 +235,7 @@ export default function AuthForm({ initialMode = 'login', onSuccess }) {
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Alex Mathio"
+                placeholder="Your Name"
                 className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-neutral-900 border border-white/10 
                   focus:border-orange-500 focus:ring-1 focus:ring-orange-500 text-sm text-white placeholder:text-neutral-500
                   outline-none transition-colors"

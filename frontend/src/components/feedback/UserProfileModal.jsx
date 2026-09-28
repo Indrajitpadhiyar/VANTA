@@ -1,21 +1,21 @@
-import React from 'react';
-import { 
-  User, 
-  Mail, 
-  ShieldCheck, 
-  LogOut, 
-  Package, 
-  MapPin, 
-  X, 
+import React from "react";
+import {
+  User,
+  Mail,
+  ShieldCheck,
+  LogOut,
+  Package,
+  MapPin,
+  X,
   ExternalLink,
   ChevronRight,
-  Sparkles
-} from 'lucide-react';
-import { useAuth, useUI } from '../../context';
+  Sparkles,
+} from "lucide-react";
+import { useAuth, useUI } from "../../context";
 
 export default function UserProfileModal({ isOpen, onClose }) {
   const { user, logout } = useAuth();
-  const { closeAuth } = useUI();
+  const { closeAuth, goToProfilePage } = useUI();
 
   if (!isOpen || !user) return null;
 
@@ -53,7 +53,10 @@ export default function UserProfileModal({ isOpen, onClose }) {
         <div className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 mb-6">
           <div className="relative">
             <img
-              src={user.avatar?.url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'}
+              src={
+                user.avatar?.url ||
+                "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150"
+              }
               alt={user.name}
               className="w-14 h-14 rounded-full object-cover ring-2 ring-orange-500/50"
             />
@@ -65,54 +68,82 @@ export default function UserProfileModal({ isOpen, onClose }) {
               <h3 className="text-base font-bold text-white truncate font-cute">
                 {user.name}
               </h3>
-              <span className={`text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full ${
-                user.role === 'admin'
-                  ? 'bg-orange-500 text-white shadow-sm'
-                  : 'bg-white/10 text-neutral-300'
-              }`}>
+              <span
+                className={`text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full ${
+                  user.role === "admin"
+                    ? "bg-orange-500 text-white shadow-sm"
+                    : "bg-white/10 text-neutral-300"
+                }`}
+              >
                 {user.role}
               </span>
             </div>
-            <p className="text-xs text-neutral-400 truncate mt-0.5">{user.email}</p>
+            <p className="text-xs text-neutral-400 truncate mt-0.5">
+              {user.email}
+            </p>
           </div>
         </div>
 
         {/* Quick Menu Options */}
         <div className="space-y-2 mb-6">
-          <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-colors cursor-pointer group">
+          <div 
+            onClick={() => {
+              goToProfilePage('orders');
+              onClose();
+            }}
+            className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-colors cursor-pointer group"
+          >
             <div className="flex items-center gap-3">
               <Package className="w-4 h-4 text-orange-400" />
               <div>
                 <div className="text-xs font-bold text-white group-hover:text-orange-400 transition-colors">
                   My Orders & Shipments
                 </div>
-                <div className="text-[10px] text-neutral-400">View recent orders and live tracking</div>
+                <div className="text-[10px] text-neutral-400">
+                  View recent orders and live tracking
+                </div>
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-neutral-500 group-hover:text-white transition-colors" />
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-colors cursor-pointer group">
+          <div 
+            onClick={() => {
+              goToProfilePage('details');
+              onClose();
+            }}
+            className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-colors cursor-pointer group"
+          >
             <div className="flex items-center gap-3">
               <MapPin className="w-4 h-4 text-orange-400" />
               <div>
                 <div className="text-xs font-bold text-white group-hover:text-orange-400 transition-colors">
-                  Saved Shipping Addresses
+                  Personal Details & Fitting
                 </div>
-                <div className="text-[10px] text-neutral-400">1 default delivery address</div>
+                <div className="text-[10px] text-neutral-400">
+                  Update contact & customized sizing
+                </div>
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-neutral-500 group-hover:text-white transition-colors" />
           </div>
 
-          <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-colors cursor-pointer group">
+          <div 
+            onClick={() => {
+              goToProfilePage('wallet');
+              onClose();
+            }}
+            className="flex items-center justify-between p-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-colors cursor-pointer group"
+          >
             <div className="flex items-center gap-3">
               <ShieldCheck className="w-4 h-4 text-orange-400" />
               <div>
                 <div className="text-xs font-bold text-white group-hover:text-orange-400 transition-colors">
-                  Security & Password
+                  Payment & Digital Vault
                 </div>
-                <div className="text-[10px] text-neutral-400">Manage account credentials</div>
+                <div className="text-[10px] text-neutral-400">
+                  Vault credits and payment methods
+                </div>
               </div>
             </div>
             <ChevronRight className="w-4 h-4 text-neutral-500 group-hover:text-white transition-colors" />

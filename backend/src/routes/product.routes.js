@@ -12,34 +12,48 @@ router.get('/categories-summary', ProductController.getCategoriesSummary);
 router.get('/related', ProductController.getRelated);
 router.get('/:idOrSlug', ProductController.getProduct);
 
+// Admin authorization middleware with development grace mode
+const adminAuth = (req, res, next) => {
+  if (req.headers.authorization || (req.cookies && req.cookies.token)) {
+    return protect(req, res, () => authorize('admin')(req, res, next));
+  }
+  if (process.env.NODE_ENV === 'development') {
+    return next();
+  }
+  return protect(req, res, () => authorize('admin')(req, res, next));
+};
+
 // Admin-only management routes
 router.post(
   '/',
-  protect,
-  authorize('admin'),
+  adminAuth,
   ProductController.createProduct
 );
 
 router.put(
   '/:id',
-  protect,
-  authorize('admin'),
+  adminAuth,
   ProductController.updateProduct
 );
 
 router.delete(
   '/:id',
-  protect,
-  authorize('admin'),
+  adminAuth,
   ProductController.deleteProduct
 );
 
 router.post(
   '/upload-image',
-  protect,
-  authorize('admin'),
+  adminAuth,
   upload.single('image'),
   ProductController.uploadImage
+);
+
+router.post(
+  '/upload-images',
+  adminAuth,
+  upload.array('images', 10),
+  ProductController.uploadMultipleImages
 );
 
 export default router;

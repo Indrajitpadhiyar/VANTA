@@ -10,8 +10,24 @@ import healthRoutes from './health.routes.js';
 const router = Router();
 
 /**
- * API Version 1 Router Aggregation
+ * API Version 1 Router Aggregation & Endpoint Directory
  */
+router.get('/', (req, res) => {
+  res.status(200).json({
+    success: true,
+    version: 'v1',
+    description: 'VANTA Haute Couture & Streetwear RESTful API',
+    endpoints: {
+      auth: '/api/v1/auth',
+      products: '/api/v1/products',
+      categories: '/api/v1/categories',
+      orders: '/api/v1/orders',
+      cart: '/api/v1/cart',
+      reviews: '/api/v1/reviews',
+      health: '/api/v1/health',
+    },
+  });
+});
 router.use('/auth', authRoutes);
 router.use('/products', productRoutes);
 router.use('/categories', categoryRoutes);

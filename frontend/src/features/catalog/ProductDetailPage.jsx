@@ -1,15 +1,51 @@
-import React, { useEffect } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { hoodieModelImg, hoodieFlatImg } from '../../assets';
 import { RELATED_PRODUCTS, REVIEWS } from '../../data/products';
 import { useUI } from '../../context';
+import { productsApi } from '../../services';
 import { ProductGallery, BuyBox, ReviewSection } from './components';
 
-export default function ProductDetailPage({ product }) {
-  const { goHome, viewProduct } = useUI();
+export default function ProductDetailPage({ product: propProduct }) {
+  const { id } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const { goHome, viewProduct, selectedProduct } = useUI();
+
+  const [loading, setLoading] = useState(false);
+  const [fetchedProduct, setFetchedProduct] = useState(null);
+
+  // Determine initial product from props, location state, or context
+  const directProduct = propProduct || location.state?.product || (selectedProduct && (selectedProduct.slug === id || selectedProduct._id === id || String(selectedProduct.id) === String(id)) ? selectedProduct : null);
+
+  useEffect(() => {
+    // If we have an id param from URL and no product in memory matching it, fetch from API
+    if (id && !directProduct) {
+      let isMounted = true;
+      setLoading(true);
+      productsApi
+        .getByIdOrSlug(id)
+        .then((res) => {
+          if (isMounted && res.success && res.data) {
+            setFetchedProduct(res.data);
+          }
+        })
+        .catch((err) => {
+          console.warn('Could not fetch product by ID from backend:', err);
+        })
+        .finally(() => {
+          if (isMounted) setLoading(false);
+        });
+
+      return () => {
+        isMounted = false;
+      };
+    }
+  }, [id, directProduct]);
 
   // Fallback defaults matching screenshot if no product is passed
-  const currentProduct = product || {
+  const currentProduct = directProduct || fetchedProduct || {
     id: 1,
     name: 'Loose Fit Hoodie',
     category: 'Men Fashion',
@@ -29,7 +65,7 @@ export default function ProductDetailPage({ product }) {
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [product]);
+  }, [id, propProduct]);
 
   return (
     <div className="w-full bg-[#fdfdfd] text-neutral-900 font-sans selection:bg-orange-500 selection:text-white pt-24 sm:pt-28 pb-20">
