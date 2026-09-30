@@ -240,7 +240,7 @@ export default function ManageOrdersSection() {
                     <div className="text-right mr-2">
                       <span className="text-xs text-neutral-400 block font-semibold">Total Price</span>
                       <span className="text-base font-black text-neutral-900 font-cute">
-                        ${(order.totalPrice || 0).toFixed(2)}
+                        ₹{(order.totalPrice || 0).toFixed(2)}
                       </span>
                     </div>
 
@@ -336,7 +336,7 @@ export default function ManageOrdersSection() {
                               </div>
                             </div>
                             <span className="font-bold text-xs text-neutral-900 font-cute">
-                              ${((item.price || 0) * (item.quantity || 1)).toFixed(2)}
+                              ₹{((item.price || 0) * (item.quantity || 1)).toFixed(2)}
                             </span>
                           </div>
                         ))}

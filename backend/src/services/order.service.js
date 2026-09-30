@@ -62,7 +62,7 @@ export const OrderService = {
     }
 
     // Enterprise tax & shipping fee calculation rules
-    const shippingPrice = itemsPrice > 100 ? 0 : 15; // Free shipping above $100
+    const shippingPrice = itemsPrice > 100 ? 0 : 15; // Free shipping above ₹100
     const taxPrice = Math.round(itemsPrice * 0.08 * 100) / 100; // 8% sales tax
     const totalPrice = Math.round((itemsPrice + shippingPrice + taxPrice) * 100) / 100;
 

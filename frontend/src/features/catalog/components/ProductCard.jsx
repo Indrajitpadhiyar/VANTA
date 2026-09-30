@@ -83,7 +83,7 @@ export default function ProductCard({ product }) {
             {product.color}
           </span>
           <span className="text-base sm:text-lg font-black text-neutral-950 font-cute">
-            ${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
+            ₹{typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
           </span>
         </div>
 

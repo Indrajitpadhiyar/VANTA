@@ -480,7 +480,7 @@ export default function ProfileDetailsPage() {
                         </button>
 
                         <span className="text-lg font-black text-neutral-900">
-                          ${(order.totalPrice || order.total || 0).toFixed(2)}
+                          ₹{(order.totalPrice || order.total || 0).toFixed(2)}
                         </span>
                       </div>
                     </div>
@@ -509,7 +509,7 @@ export default function ProfileDetailsPage() {
                           </div>
 
                           <div className="text-right">
-                            <span className="text-sm font-bold text-neutral-900">${(item.price || 0).toFixed(2)}</span>
+                            <span className="text-sm font-bold text-neutral-900">₹{(item.price || 0).toFixed(2)}</span>
                             <span className="block text-[10px] text-emerald-600 font-bold uppercase">Confirmed Item</span>
                           </div>
                         </div>
@@ -692,7 +692,7 @@ export default function ProfileDetailsPage() {
                           <p className="text-xs text-neutral-500">Size: {item.size || 'L'} • Qty: {item.quantity || 1}</p>
                         </div>
                       </div>
-                      <span className="font-bold text-sm text-neutral-900">${(item.price * (item.quantity || 1)).toFixed(2)}</span>
+                      <span className="font-bold text-sm text-neutral-900">₹{(item.price * (item.quantity || 1)).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
@@ -769,7 +769,7 @@ export default function ProfileDetailsPage() {
                   </div>
 
                   <div className="text-3xl sm:text-4xl font-black text-neutral-900">
-                    ${(vaultPoints * 0.01).toFixed(2)} <span className="text-xs text-neutral-500 font-normal">({vaultPoints} PTS)</span>
+                    ₹{(vaultPoints * 0.01).toFixed(2)} <span className="text-xs text-neutral-500 font-normal">({vaultPoints} PTS)</span>
                   </div>
 
                   <p className="text-xs text-neutral-600 mt-2 leading-relaxed">

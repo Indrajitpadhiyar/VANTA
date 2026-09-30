@@ -8,7 +8,7 @@ import {
   AlertCircle, 
   Image as ImageIcon,
   Tag, 
-  DollarSign, 
+  IndianRupee, 
   Layers, 
   ShoppingBag, 
   Eye, 
@@ -515,7 +515,7 @@ export default function AddProductSection({ onProductCreated }) {
             {/* 4. Retail Price */}
             <div>
               <label className="block text-xs uppercase tracking-wider font-bold text-neutral-700 mb-2">
-                Retail Price ($ USD) <span className="text-orange-500">*</span>
+                Retail Price (₹ INR) <span className="text-orange-500">*</span>
               </label>
               <input
                 type="number"
@@ -1020,7 +1020,7 @@ export default function AddProductSection({ onProductCreated }) {
                 {formData.color || 'Noir Black'}
               </span>
               <span className="text-base sm:text-lg font-black text-neutral-950 font-cute">
-                ${formData.price ? Number(formData.price).toFixed(2) : '95.00'}
+                ₹{formData.price ? Number(formData.price).toFixed(2) : '95.00'}
               </span>
             </div>
 

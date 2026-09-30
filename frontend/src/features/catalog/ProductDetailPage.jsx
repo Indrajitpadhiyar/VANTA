@@ -206,11 +206,11 @@ export default function ProductDetailPage({ product: propProduct }) {
                   {/* Price */}
                   <div className="flex items-center gap-2 mt-auto">
                     <span className="text-sm font-extrabold text-neutral-950 font-cute">
-                      ${item.price}
+                      ₹{item.price}
                     </span>
                     {item.originalPrice && (
                       <span className="text-xs text-neutral-400 line-through font-cute">
-                        ${item.originalPrice}
+                        ₹{item.originalPrice}
                       </span>
                     )}
                   </div>

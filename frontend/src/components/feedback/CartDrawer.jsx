@@ -55,7 +55,7 @@ export default function CartDrawer({
           {/* Free Shipping Tier */}
           <div className="bg-neutral-50 px-6 py-3 border-b border-neutral-100">
             <div className="flex justify-between text-xs font-semibold text-neutral-700 mb-1.5">
-              <span>{diff > 0 ? `Add $${diff.toFixed(2)} more for Free Express Shipping` : '🎉 You unlocked Free Express Shipping!'}</span>
+              <span>{diff > 0 ? `Add ₹${diff.toFixed(2)} more for Free Express Shipping` : '🎉 You unlocked Free Express Shipping!'}</span>
               <span>{progress}%</span>
             </div>
             <div className="w-full h-1.5 bg-neutral-200 rounded-full overflow-hidden">
@@ -124,7 +124,7 @@ export default function CartDrawer({
                         </button>
                       </div>
                       <span className="text-sm font-black text-neutral-900 font-cute">
-                        ${typeof item.price === 'number' ? (item.price * item.quantity).toFixed(2) : item.price}
+                        ₹{typeof item.price === 'number' ? (item.price * item.quantity).toFixed(2) : item.price}
                       </span>
                     </div>
                   </div>
@@ -139,17 +139,17 @@ export default function CartDrawer({
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between text-neutral-500">
                   <span>Subtotal</span>
-                  <span className="text-neutral-900 font-semibold font-cute">${subtotal.toFixed(2)}</span>
+                  <span className="text-neutral-900 font-semibold font-cute">₹{subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-neutral-500">
                   <span>Shipping</span>
                   <span className="text-emerald-600 font-semibold font-cute">
-                    {diff === 0 ? 'FREE' : '$15.00'}
+                    {diff === 0 ? 'FREE' : '₹15.00'}
                   </span>
                 </div>
                 <div className="flex justify-between text-base font-bold text-neutral-950 pt-2 border-t border-neutral-100 font-cute">
                   <span>Total</span>
-                  <span>${(subtotal + (diff === 0 ? 0 : 15)).toFixed(2)}</span>
+                  <span>₹{(subtotal + (diff === 0 ? 0 : 15)).toFixed(2)}</span>
                 </div>
               </div>
 

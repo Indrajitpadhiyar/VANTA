@@ -673,7 +673,7 @@ export default function DynamicIslandNav() {
                             {item.name}
                           </div>
                           <div className="text-[11px] text-neutral-400">
-                            {item.category} • ${item.price.toFixed(2)}
+                            {item.category} • ₹{item.price.toFixed(2)}
                           </div>
                         </div>
                       </div>

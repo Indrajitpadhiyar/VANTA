@@ -50,7 +50,7 @@ export default function BuyBox({ product }) {
 
       {/* Price */}
       <div className="text-2xl sm:text-3xl font-extrabold text-neutral-950 font-cute mb-5">
-        ${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
+        ₹{typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
       </div>
 
       {/* Next Day Delivery Countdown Notice */}

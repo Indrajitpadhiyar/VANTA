@@ -12,7 +12,7 @@ export default function PhilosophyBanner() {
     {
       icon: Truck,
       title: 'Global Express Dispatch',
-      desc: 'Complimentary expedited 48-hour delivery on all collection orders exceeding $120.'
+      desc: 'Complimentary expedited 48-hour delivery on all collection orders exceeding ₹1,200.'
     },
     {
       icon: RefreshCw,

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  DollarSign, 
+  IndianRupee, 
   ShoppingBag, 
   Package, 
   Users, 
@@ -133,11 +133,11 @@ export default function DashboardOverview({ onNavigateTab }) {
               Gross Store Revenue
             </span>
             <div className="w-9 h-9 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <DollarSign className="w-4 h-4" />
+              <IndianRupee className="w-4 h-4" />
             </div>
           </div>
           <div className="text-2xl sm:text-3xl font-black text-neutral-900 font-cute">
-            ${stats.totalRevenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            ₹{stats.totalRevenue.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </div>
           <div className="flex items-center gap-1.5 mt-2 text-[11px] text-emerald-600 font-bold">
             <TrendingUp className="w-3.5 h-3.5" />
@@ -286,7 +286,7 @@ export default function DashboardOverview({ onNavigateTab }) {
 
                   <div className="text-right">
                     <div className="text-xs font-black text-neutral-900">
-                      ${(order.totalPrice || 0).toFixed(2)}
+                      ₹{(order.totalPrice || 0).toFixed(2)}
                     </div>
                     <span className="text-[10px] uppercase font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
                       {order.orderStatus || 'Processing'}
@@ -337,7 +337,7 @@ export default function DashboardOverview({ onNavigateTab }) {
                 </div>
 
                 <span className="text-xs font-black text-neutral-900 font-cute">
-                  ${typeof prod.price === 'number' ? prod.price.toFixed(2) : prod.price}
+                  ₹{typeof prod.price === 'number' ? prod.price.toFixed(2) : prod.price}
                 </span>
               </div>
             ))}

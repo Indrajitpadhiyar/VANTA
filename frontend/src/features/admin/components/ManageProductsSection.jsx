@@ -265,11 +265,11 @@ export default function ManageProductsSection({ onNavigateAdd }) {
                       {/* Price */}
                       <td className="py-4 px-4">
                         <span className="font-bold text-neutral-900 font-cute text-sm">
-                          ${typeof p.price === 'number' ? p.price.toFixed(2) : p.price}
+                          ₹{typeof p.price === 'number' ? p.price.toFixed(2) : p.price}
                         </span>
                         {p.originalPrice && (
                           <span className="block text-[10px] text-neutral-400 line-through font-mono">
-                            ${Number(p.originalPrice).toFixed(2)}
+                            ₹{Number(p.originalPrice).toFixed(2)}
                           </span>
                         )}
                       </td>
@@ -369,7 +369,7 @@ export default function ManageProductsSection({ onNavigateAdd }) {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-neutral-700 mb-1">
-                    Price ($ USD)
+                    Price (₹ INR)
                   </label>
                   <input
                     type="number"

@@ -170,7 +170,7 @@ export default function SearchModal({
 
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-white font-cute">
-                    ${typeof item.price === 'number' ? item.price.toFixed(2) : item.price}
+                    ₹{typeof item.price === 'number' ? item.price.toFixed(2) : item.price}
                   </span>
                   <ArrowRight className="w-4 h-4 text-neutral-400 group-hover:translate-x-1 group-hover:text-orange-400 transition-transform" />
                 </div>
