@@ -16,7 +16,6 @@ import {
   Sliders
 } from 'lucide-react';
 import { vantaLogo } from '../../assets';
-import { PRODUCTS } from '../../data/products';
 import { useCart, useUI, useAuth } from '../../context';
 import { UserProfileModal } from '../feedback';
 

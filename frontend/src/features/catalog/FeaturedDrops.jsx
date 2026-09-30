@@ -1,15 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { vantaLogo } from '../../assets';
-import { PRODUCTS, CATEGORIES } from '../../data/products';
 import { ProductCard } from './components';
-import { productsApi } from '../../services';
+import { productsApi, categoriesApi } from '../../services';
 
 export default function FeaturedDrops() {
+  const [categories, setCategories] = useState(['All']);
   const [activeCategory, setActiveCategory] = useState('All');
-  const [liveProducts, setLiveProducts] = useState(PRODUCTS);
-  const [isLoading, setIsLoading] = useState(false);
+  const [liveProducts, setLiveProducts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isBackendConnected, setIsBackendConnected] = useState(false);
 
+  // 1. Fetch Categories dynamically from database
+  useEffect(() => {
+    let isMounted = true;
+    categoriesApi.getAll()
+      .then((res) => {
+        if (isMounted && res?.data && Array.isArray(res.data) && res.data.length > 0) {
+          const names = res.data.map((c) => c.name);
+          setCategories(['All', ...names]);
+        }
+      })
+      .catch((err) => {
+        console.warn('Could not fetch categories from database:', err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // 2. Fetch Products dynamically from database
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
@@ -18,29 +38,23 @@ export default function FeaturedDrops() {
 
     productsApi.getAll(params)
       .then((res) => {
-        if (isMounted && res?.data && Array.isArray(res.data) && res.data.length > 0) {
-          // Normalize items so each item has id, image, and secondaryImage
-          const normalized = res.data.map((item) => ({
-            ...item,
-            id: item._id || item.id,
-          }));
-          setLiveProducts(normalized);
-          setIsBackendConnected(true);
-        } else if (isMounted) {
-          // Fallback to local catalog if category has no backend items
-          const localFiltered = activeCategory === 'All'
-            ? PRODUCTS
-            : PRODUCTS.filter((p) => p.category === activeCategory);
-          setLiveProducts(localFiltered);
+        if (isMounted) {
+          if (res?.data && Array.isArray(res.data)) {
+            const normalized = res.data.map((item) => ({
+              ...item,
+              id: item._id || item.id,
+            }));
+            setLiveProducts(normalized);
+            setIsBackendConnected(true);
+          } else {
+            setLiveProducts([]);
+          }
         }
       })
-      .catch(() => {
+      .catch((err) => {
+        console.warn('Could not fetch products from database:', err);
         if (isMounted) {
-          // Graceful fallback to local catalog on error
-          const localFiltered = activeCategory === 'All'
-            ? PRODUCTS
-            : PRODUCTS.filter((p) => p.category === activeCategory);
-          setLiveProducts(localFiltered);
+          setLiveProducts([]);
           setIsBackendConnected(false);
         }
       })
@@ -74,7 +88,7 @@ export default function FeaturedDrops() {
 
         {/* Filter Pills */}
         <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map((cat) => (
+          {categories.map((cat) => (
             <button
               key={cat}
               onClick={() => setActiveCategory(cat)}
@@ -100,6 +114,15 @@ export default function FeaturedDrops() {
               <div className="h-4 bg-neutral-200 rounded w-1/4" />
             </div>
           ))}
+        </div>
+      ) : liveProducts.length === 0 ? (
+        <div className="text-center py-20 px-4 bg-neutral-50/60 rounded-3xl border border-dashed border-neutral-200">
+          <p className="text-neutral-600 font-cute font-bold text-base mb-1">
+            No products found in "{activeCategory}"
+          </p>
+          <p className="text-xs text-neutral-400 font-cute">
+            Add new products in the Admin Panel to display them here live from the database.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">

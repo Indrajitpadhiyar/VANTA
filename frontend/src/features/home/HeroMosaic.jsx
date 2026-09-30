@@ -1,14 +1,61 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Sparkles, Edit3 } from 'lucide-react';
 import { heroModel } from '../../assets';
+import { settingsApi } from '../../services';
+import { useAuth } from '../../context';
 
 export default function HeroMosaic() {
   const [hoveredBox, setHoveredBox] = useState(null);
+  const [heroImage, setHeroImage] = useState(heroModel);
+  const [badgeText, setBadgeText] = useState('VANTA SIGNATURE FIT');
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin' || user?.email === 'admin@vanta.com';
+
+  useEffect(() => {
+    let isMounted = true;
+
+    // Load initial configured image & badge
+    settingsApi.getHeroConfig().then((cfg) => {
+      if (isMounted && cfg) {
+        if (cfg.heroImage) setHeroImage(cfg.heroImage);
+        if (cfg.badgeText) setBadgeText(cfg.badgeText);
+      }
+    });
+
+    // Listen to live updates from the Admin Customizer
+    const handleUpdate = (e) => {
+      if (e.detail) {
+        if (e.detail.heroImage) setHeroImage(e.detail.heroImage);
+        if (e.detail.badgeText) setBadgeText(e.detail.badgeText);
+      }
+    };
+
+    window.addEventListener('vanta_hero_updated', handleUpdate);
+    return () => {
+      isMounted = false;
+      window.removeEventListener('vanta_hero_updated', handleUpdate);
+    };
+  }, []);
 
   return (
-    <div className="relative w-full max-w-[580px] lg:max-w-[620px] mx-auto select-none py-4">
+    <div className="relative w-full max-w-[580px] lg:max-w-[620px] mx-auto select-none py-4 group">
+      {/* Admin Quick Edit Shortcut Button */}
+      {isAdmin && (
+        <button
+          onClick={() => navigate('/admin/hero-banner')}
+          className="absolute -top-2 right-4 z-20 opacity-0 group-hover:opacity-100 transition-all duration-300 bg-neutral-900/90 hover:bg-orange-500 text-white text-xs font-bold font-cute px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5 backdrop-blur-md cursor-pointer border border-white/20"
+          title="Customize Hero Photo in Admin Panel"
+        >
+          <Edit3 className="w-3.5 h-3.5" />
+          <span>Customize Hero</span>
+        </button>
+      )}
+
       {/* 
         Single unified image frame cut into the exact rounded mosaic boxes using SVG Mask.
-        This guarantees:
+        Guarantees:
         1. Only ONE single continuous photo of the model is loaded.
         2. Zero duplicate body parts or head/torso repeats.
         3. All boxes align seamlessly as windows into the single unified frame.
@@ -62,7 +109,7 @@ export default function HeroMosaic() {
         </defs>
 
         {/* ============================================================== */}
-        {/* Floating Decorative Ambient Tiles (Matching original design)   */}
+        {/* Floating Decorative Ambient Tiles                              */}
         {/* ============================================================== */}
 
         {/* 1. Top-Left Floating Grey Card (tilted) */}
@@ -125,7 +172,7 @@ export default function HeroMosaic() {
         {/* THE SINGLE MASTER IMAGE (Masked into the unified mosaic frame) */}
         {/* ============================================================== */}
         <image
-          href={heroModel}
+          href={heroImage || heroModel}
           x="75"
           y="15"
           width="510"
@@ -231,26 +278,26 @@ export default function HeroMosaic() {
           className="hover:stroke-orange-500/40 transition-colors cursor-pointer"
         />
 
-        {/* Optional floating luxury badge over the horizontal bar */}
-        <g transform="translate(420, 368)">
+        {/* Floating luxury badge over the horizontal bar */}
+        <g transform="translate(400, 368)">
           <rect
-            width="135"
+            width="155"
             height="28"
             rx="14"
             fill="#FF6500"
             filter="url(#tileShadow)"
           />
           <text
-            x="67.5"
+            x="77.5"
             y="18"
             textAnchor="middle"
             fill="#FFFFFF"
-            fontSize="11"
+            fontSize="10.5"
             fontWeight="800"
             letterSpacing="0.08em"
             fontFamily="Fredoka, Outfit, sans-serif"
           >
-            VANTA SIGNATURE FIT
+            {badgeText}
           </text>
         </g>
       </svg>

@@ -50,6 +50,12 @@ export default function AdminSidebar({
       description: 'Fulfill, track & dispatch consignments',
       icon: ShoppingBag,
     },
+    {
+      id: 'hero-banner',
+      label: 'Hero Section',
+      description: 'Customize mosaic photo & brand badge',
+      icon: Sparkles,
+    },
   ];
 
   return (

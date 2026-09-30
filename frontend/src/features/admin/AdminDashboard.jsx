@@ -6,6 +6,7 @@ import DashboardOverview from './components/DashboardOverview';
 import AddProductSection from './components/AddProductSection';
 import ManageProductsSection from './components/ManageProductsSection';
 import ManageOrdersSection from './components/ManageOrdersSection';
+import CustomizeHeroSection from './components/CustomizeHeroSection';
 import { useAuth } from '../../context';
 
 export default function AdminDashboard() {
@@ -20,6 +21,7 @@ export default function AdminDashboard() {
     if (path.includes('add-product')) return 'add-product';
     if (path.includes('manage-products') || path.includes('products')) return 'manage-products';
     if (path.includes('manage-orders') || path.includes('orders')) return 'manage-orders';
+    if (path.includes('hero-banner') || path.includes('hero')) return 'hero-banner';
     return 'dashboard';
   };
 
@@ -108,6 +110,10 @@ export default function AdminDashboard() {
 
           {activeSection === 'manage-orders' && (
             <ManageOrdersSection />
+          )}
+
+          {activeSection === 'hero-banner' && (
+            <CustomizeHeroSection />
           )}
         </main>
       </div>

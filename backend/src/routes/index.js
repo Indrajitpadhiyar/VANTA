@@ -6,6 +6,7 @@ import orderRoutes from './order.routes.js';
 import cartRoutes from './cart.routes.js';
 import reviewRoutes from './review.routes.js';
 import healthRoutes from './health.routes.js';
+import settingRoutes from './setting.routes.js';
 
 const router = Router();
 
@@ -24,6 +25,7 @@ router.get('/', (req, res) => {
       orders: '/api/v1/orders',
       cart: '/api/v1/cart',
       reviews: '/api/v1/reviews',
+      settings: '/api/v1/settings',
       health: '/api/v1/health',
     },
   });
@@ -34,6 +36,7 @@ router.use('/categories', categoryRoutes);
 router.use('/orders', orderRoutes);
 router.use('/cart', cartRoutes);
 router.use('/reviews', reviewRoutes);
+router.use('/settings', settingRoutes);
 router.use('/health', healthRoutes);
 
 export default router;

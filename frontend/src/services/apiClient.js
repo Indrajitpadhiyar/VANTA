@@ -124,12 +124,29 @@ export const productsApi = {
   getFeatured: () => client.get('/products/featured'),
   getCategoriesSummary: () => client.get('/products/categories-summary'),
   getByIdOrSlug: (idOrSlug) => client.get(`/products/${idOrSlug}`),
-  getRelated: (id) => client.get(`/products/related?id=${id}`),
+  getRelated: (productId, category = '') => {
+    const query = new URLSearchParams();
+    if (productId) query.append('productId', productId);
+    if (category) query.append('category', category);
+    return client.get(`/products/related?${query.toString()}`);
+  },
   create: (productData) => client.post('/products', productData),
   update: (id, productData) => client.put(`/products/${id}`, productData),
   delete: (id) => client.delete(`/products/${id}`),
   uploadImage: (formData) => client.post('/products/upload-image', formData, { isFormData: true }),
   uploadImages: (formData) => client.post('/products/upload-images', formData, { isFormData: true }),
+};
+
+/**
+ * Reviews Endpoints
+ */
+export const reviewsApi = {
+  getByProduct: (productId, params = {}) => {
+    const query = new URLSearchParams(params).toString();
+    return client.get(`/reviews/product/${productId}${query ? `?${query}` : ''}`);
+  },
+  create: (productId, reviewData) => client.post(`/reviews/product/${productId}`, reviewData),
+  delete: (id) => client.delete(`/reviews/${id}`),
 };
 
 /**
@@ -175,3 +192,45 @@ export const cartApi = {
 export const healthApi = {
   check: () => client.get('/health'),
 };
+
+/**
+ * Site Settings & Appearance Endpoints
+ */
+export const settingsApi = {
+  get: (key) => client.get(`/settings/${key}`),
+  update: (key, data) => client.put(`/settings/${key}`, { value: data }),
+
+  getHeroConfig: async () => {
+    try {
+      const res = await client.get('/settings/hero_config');
+      if (res?.success && res.data) {
+        localStorage.setItem('vanta_hero_config', JSON.stringify(res.data));
+        return res.data;
+      }
+    } catch {
+      // Fallback to local storage if endpoint not yet loaded
+    }
+    try {
+      const cached = localStorage.getItem('vanta_hero_config');
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  },
+
+  saveHeroConfig: async (config) => {
+    try {
+      localStorage.setItem('vanta_hero_config', JSON.stringify(config));
+      window.dispatchEvent(new CustomEvent('vanta_hero_updated', { detail: config }));
+    } catch (e) {
+      console.warn('Could not cache hero config in localStorage', e);
+    }
+    try {
+      await client.put('/settings/hero_config', { value: config });
+    } catch (err) {
+      console.warn('Could not sync hero config with backend:', err.message);
+    }
+    return config;
+  },
+};
+

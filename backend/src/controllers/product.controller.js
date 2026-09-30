@@ -42,10 +42,13 @@ export const ProductController = {
    */
   getRelated: asyncHandler(async (req, res) => {
     const { productId, category } = req.query;
-    if (!category) {
-      throw ApiError.badRequest('Category query parameter is required for related products.');
+    let related = [];
+    if (category) {
+      related = await ProductService.getRelatedProducts(productId, category);
     }
-    const related = await ProductService.getRelatedProducts(productId, category);
+    if (!related || related.length === 0) {
+      related = await ProductService.getFeaturedProducts(4);
+    }
     res.status(HttpStatusCodes.OK).json(
       ApiResponse.success(related, 'Related products retrieved successfully.')
     );
